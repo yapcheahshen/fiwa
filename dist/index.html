@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forth Inspired WebAssembler</title>
+  <style>
+    textarea {font-size:125%}
+    #error {color: red}
+  </style>
+  <script src="index.js"></script> <!-- create by npm run build -->
+  <script src="corewords.js"></script> <!-- fiwa core words -->  
+  <script src="usercode.js"></script>   <!-- user code-->
+
+</head>
+<body>
+    <div>FIWA 符示織網 Forth Inspired WebAssembler</div>
+    <div id="error">　</div>
+    <textarea rows='11' cols='50' id="fiwasrc" onInput="compileMe()">
+:cube ( a -- 1 ) dup * a * ;cube  \ a是參數命名，1 表示1個返回值
+\ 在 :  ; 外的字不是直譯，而是編入 main，執行後返回值顯示在下方。
+1 if 
+    9
+else
+    99
+then
+cube   \\ 返回值
+    </textarea><br/>
+    <button onclick="javascript:clearLog()">🗑</button>
+    <label><input type="checkbox" checked=true id="autocompile" title="interactive">🗪</input></label>
+
+    <div id="log"></div>
+</body>
+  <script>
+     const clearLog=e=>document.querySelector("#log").innerHTML='';
+     const clearError=e=>document.querySelector("#error").innerHTML='　';
+     const onLog=e=> {
+        const log=document.querySelector("#log");
+        log.insertAdjacentHTML('afterbegin','<div>'+e+'</div>');
+        if (log.childElementCount>10 ) log.removeChild(log.lastChild);
+    }
+     const onError=e=>document.querySelector("#error").innerHTML=e;
+
+     const fiwa=new Fiwa({boot:[corewords,usercode],onError,onLog});
+     let timer;
+     function compileMe(){
+        if (!document.querySelector("#autocompile").checked)return;
+        clearTimeout(timer);
+        timer=setTimeout(async ()=>{   
+           clearError();
+           fiwasource=document.querySelector("#fiwasrc").value;
+           const symbols=await fiwa.execute(fiwasource); 
+           //console.log(symbols)      //WebAssembly export 的符號
+        },250);
+     }
+     compileMe();
+  </script>
+</html>

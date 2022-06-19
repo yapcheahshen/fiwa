@@ -1,0 +1,21 @@
+{
+  "name": "fiwa",
+  "version": "1.0.0",
+  "description": "Forth Inspired WebAssembler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev":"esbuild --bundle --watch --format=iife index.ts --outfile=dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yapcheahshen/fiwa.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yapcheahshen/fiwa/issues"
+  },
+  "homepage": "https://github.com/yapcheahshen/fiwa#readme"
+}
