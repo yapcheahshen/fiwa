@@ -1,5 +1,5 @@
 /* 各種小writer */
-import {encInt,encUInt,encUIntString,eqFuncTypes} from './utils.ts'
+import {encUInt,encUIntString} from './utils.ts'
 import {Var} from './constants.ts'
 export class FunctionWriter{
 	constructor (type:number) {
@@ -32,8 +32,8 @@ export class ExportWriter {
 		this.name=name;
 	}
 	write(){ 
-	    let out = [];
-	    let encoded_field_bytes = encUIntString(this._field);
+	    const out = [];
+	    const encoded_field_bytes = encUIntString(this._field);
 	    out.push(...encUInt(encoded_field_bytes.length),...encoded_field_bytes);
 	    out.push(this._kind);
 	    out.push(...encUInt(this._index));
@@ -52,10 +52,10 @@ export class ImportWriter {
 	setType(type){
 		this.type=type;
 	}
-	write(){ //need setName and setType
-	    let output = [];
-	    let module_bytes = encUIntString(this._mod);
-	    let field_bytes = encUIntString(this._field);
+	write(){
+	    const output = [];
+	    const module_bytes = encUIntString(this._mod);
+	    const field_bytes = encUIntString(this._field);
 	    output.push(...encUInt(module_bytes.length), ...module_bytes);
 	    output.push(...encUInt(field_bytes.length), ...field_bytes);
 	    output.push( this._kind);

@@ -7,7 +7,7 @@ export const PARENTHESIS_REGEX_G= /\(((?:\\.|.)*?)\)/g
 export const PARENTHESIS_PREFIX='\u0011';
 const replacePat=(buf:string,pat,prefix)=>{
 	const quotes=[];
-	const newbuf=buf.replace(pat,(m,m1)=>{
+	const newbuf=buf.replace(pat,(_m,m1)=>{
 	        quotes.push(m1);
 	        return prefix+(quotes.length-1);
 	});
@@ -17,7 +17,7 @@ export const tokenize=(buf:string)=>{
 	buf=buf.replace(/\\[^\n]+/g,''); //remove comment
 	const [buf2,quotes]=replacePat(buf , QSTRING_REGEX_G ,QUOTE_PREFIX );
 	const [buf3,parenthesis]=replacePat(buf2, PARENTHESIS_REGEX_G,PARENTHESIS_PREFIX);
-	let tokens=buf3.split(/[\r\n ]+/);
+	const tokens=buf3.split(/[\r\n ]+/);
 	return tokens.map(tk=>{
 		if (tk[0]==QUOTE_PREFIX)       return '"'+quotes[ parseInt(tk.slice(1)) ]+'"';
 		if (tk[0]==PARENTHESIS_PREFIX) return '('+parenthesis[ parseInt(tk.slice(1)) ]+')';

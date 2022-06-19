@@ -19,12 +19,14 @@
     <textarea rows='11' cols='50' id="fiwasrc" onInput="compileMe()">
 :cube ( a -- 1 ) dup * a * ;cube  \ a是參數命名，1 表示1個返回值
 \ 在 :  ; 外的字不是直譯，而是編入 main，執行後返回值顯示在下方。
-1 if 
+:localx ( a -- 1 x ) x! x dup * ;
+3 localx 10 < if 
     9
 else
     99
 then
-cube   \\ 返回值
+\\ cube   \\ 返回值
+
     </textarea><br/>
     <button onclick="javascript:clearLog()">🗑</button>
     <label><input type="checkbox" checked=true id="autocompile" title="interactive">🗪</input></label>

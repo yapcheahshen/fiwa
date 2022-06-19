@@ -67,8 +67,9 @@ export class CodeWriter {
 	i64_store8(offset,align:number) {this._code.push(Inst.i64_store8, ...encUInt(align||0),...encUInt(offset)) }
 	i64_store16(offset,align:number) {this._code.push(Inst.i64_store16, ...encUInt(align||0),...encUInt(offset)) }
 	i64_store32(offset,align:number) {this._code.push(Inst.i64_store32, ...encUInt(align||0),...encUInt(offset)) }
-	current_memory() {this._code.push(Inst.current_memory,0)}
-	grow_memory() {this._code.push(Inst.grow_memory,0)}
+	memory_size() {this._code.push(Inst.memory_size,0)}
+	memory_grow() {this._code.push(Inst.grow_memory,0)}
+	// memory_init , memory_fill , memory_copy data_drop
 	i32_const(v:number) {this._code.push(Inst.i32_const,...encInt(v))}
 	i64_const(v:number) {this._code.push(Inst.i64_const,...encInt(v))}
 	i32_eqz() {this._code.push(Inst.i32_eqz)}
@@ -77,4 +78,15 @@ export class CodeWriter {
 	i32_add() {this._code.push(Inst.i32_add)}
 	i32_sub() {this._code.push(Inst.i32_sub)}
 	i32_mul() {this._code.push(Inst.i32_mul)}
+	i32_div_s(){this._code.push(Inst.i32_div_s)}
+	i32_and(){this._code.push(Inst.i32_and)}
+	i32_or(){this._code.push(Inst.i32_or)}
+	i32_xor(){this._code.push(Inst.i32_xor)}
+	i32_shr_s(){this._code.push(Inst.i32_shr_s)}
+	i32_shr_u(){this._code.push(Inst.i32_shr_u)}
+	i32_shl(){this._code.push(Inst.i32_shl)}
+	i32_lt_s(){this._code.push(Inst.i32_lt_s)}
+	i32_gt_s(){this._code.push(Inst.i32_gt_s)}
+	i32_le_s(){this._code.push(Inst.i32_le_s)}
+	i32_ge_s(){this._code.push(Inst.i32_ge_s)}
 }

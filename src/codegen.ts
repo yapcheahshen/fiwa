@@ -3,8 +3,8 @@
 //wasm-codegen實作不完整，又比較囉嗦。
 //也沒有充份利用Javascript 的特性。
 //產生bytecode全程都用 Javascript Array ，會自動長大，最後一次性轉為 Uint8Array 。
-import {Var,ExternalKind,Inst,sectionCode} from './constants.ts'
-import {encInt,encUInt,encUIntString,eqFuncTypes} from './utils.ts'
+import {Var,ExternalKind,sectionCode} from './constants.ts'
+import {encUInt,encUIntString,eqFuncTypes} from './utils.ts'
 export {Var, ExternalKind,encodeInt,encUInt,encUIntString,sectionCode};
 import {CodeWriter} from './codewriter.ts';
 import {FunctionWriter,ImportWriter,TypeWriter,ExportWriter} from './writers.ts'
@@ -36,12 +36,12 @@ export class ModuleWriter {
 	}
 	exportFunction (name:string, field:string) {
     	field = field || name;
-    	let exportWriter = new ExportWriter(field, ExternalKind.function);
+    	const exportWriter = new ExportWriter(field, ExternalKind.function);
     	exportWriter.setName(name);
     	this._exports.push(exportWriter);
     }
     importFunction = function(name, type, mod, field) {
-    	let importWriter = new ImportWriter(mod, field, ExternalKind.function);
+    	const importWriter = new ImportWriter(mod, field, ExternalKind.function);
     	importWriter.setName(name);
     	importWriter.setType(type);
     	this._imports.push(importWriter);
@@ -54,22 +54,22 @@ export class ModuleWriter {
 	private writeSection(output,sectioncode,section){
 		if (section.length==0) return;
         output.push(sectioncode);
-        let sizeloc = output.length;
+        const sizeloc = output.length;
         output.push(...encUInt(section.length));
         section.forEach(it=>output.push(...(it.write?it.write():it))); // only Type section has no write()
         output.splice(sizeloc, 0,...encUInt(output.length - sizeloc));
 	}
 	private clearSymbols(symbols){
 		symbols.forEach(obj=> {
-	        if (obj.hasOwnProperty("name")) obj.name = undefined;
-	        if (obj.hasOwnProperty("type")) obj.type = undefined;
+	        if (obj.name) obj.name = undefined;
+	        if (obj.type) obj.type = undefined;
 	    })
 	}
 	private resolveFunctionNames(){
-		let funcTypes = [];
-	    let funcTypesOffset = this._types.length;
-	    let funcNames = [];
-	    let funcNamesOffset = this._functions.length;
+		const funcTypes = [];
+	    const funcTypesOffset = this._types.length;
+	    const funcNames = [];
+	    const funcNamesOffset = this._functions.length;
 	    this._imports.forEach( ({name,type})=> {
 	        if (name) {
 	            if (funcNames.findIndex(el=>el.name === name) === -1)funcNames.push({ name, funcType: type }); 
@@ -90,31 +90,31 @@ export class ModuleWriter {
 	    const _functions=this._functions;
 	    this._codes.forEach( ({type} )=>{
 	        if (type) {
-	            var typeIndex = funcTypes.findIndex(eqFuncTypes(type)) + funcTypesOffset;
+	            const typeIndex = funcTypes.findIndex(eqFuncTypes(type)) + funcTypesOffset;
 	            if (typeIndex === -1) throw "Weird assembler bug.";
-	            let functionWriter = new FunctionWriter(typeIndex);
+	            const functionWriter = new FunctionWriter(typeIndex);
 	            _functions.push(functionWriter);
 	        }
 	    });
 	    this._imports.forEach(obj=>{
 	        if (type) {
-	            var typeIndex = funcTypes.findIndex(eqFuncTypes(type)) + funcTypesOffset;
+	            const typeIndex = funcTypes.findIndex(eqFuncTypes(type)) + funcTypesOffset;
 	            if (typeIndex === -1) throw "Weird assembler bug.";
 	            obj.type = typeIndex;
 	        }
 	    });
 	    this._codes.forEach( obj=> {
-	        let functionLinks = obj._functionlinks;
+	        const functionLinks = obj._functionlinks;
 	        functionLinks.sort((a, b) =>b.location - a.location );
 	        functionLinks.forEach(functionLink=>{
-	            let funcIndex = funcNames.findIndex(el=>el.name === functionLink.name) + funcNamesOffset;
+	            const funcIndex = funcNames.findIndex(el=>el.name === functionLink.name) + funcNamesOffset;
 	            if (funcIndex === -1) throw 'Undeclared function "' + functionLink.name + '".';
 	            obj._code.splice(functionLink.location, 0,...encUInt(funcIndex));
 	        });
 	    })
 	    this._exports.forEach(obj=>{
 	        if (obj.name) {
-	            var funcIndex = funcNames.findIndex(el=>el.name === obj.name) + funcNamesOffset;
+	            const funcIndex = funcNames.findIndex(el=>el.name === obj.name) + funcNamesOffset;
 	            if (funcIndex === -1) throw 'Undeclared function "' + functionLink.name + '".';
 	            obj._index = funcIndex;
 	        }

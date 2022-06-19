@@ -1,8 +1,8 @@
 export const encUInt = (value:number) => { //encode unsigned LEB128
     //if (value < 0 || value !== Math.floor(value)) debugger;
-    var output = [];
+    const output = [];
     while (true) {
-        var next_val = value % 128;
+        const next_val = value % 128;
         value = Math.floor(value / 128);
         if (value > 0) {
             output.push(128 + next_val);
@@ -16,11 +16,11 @@ export const encUInt = (value:number) => { //encode unsigned LEB128
 export const encUIntString = (str:string)=>Array.from(new TextEncoder().encode(str,'utf8'));
 export const encInt = (value:number)=> { //encode signed LEB128
     //if (value !== Math.floor(value)) debugger;
-    var output = [];
-    var is_neg = value < 0;
+    const output = [];
+    const is_neg = value < 0;
     if (is_neg) value = -value - 1;
     while (true) {
-        var next_val = value % 128;
+        const next_val = value % 128;
         value = Math.floor(value / 128);
         if (value > 0 || next_val >= 64) {
             if (is_neg) output.push(~next_val & 255); else output.push(128 + next_val);

@@ -9,8 +9,13 @@ export enum Inst {
     i64_load8_s=48,i64_load8_u=49,i64_load16_s=50,i64_load16_u=51,i64_load32_s=52,i64_load32_u=53,
     i32_store=54,i64_store=55,f32_store=56,f64_store=57,i32_store8=58,i32_store16=59,
     i64_store8=60,i64_store16=61,i64_store32=62,
-    current_memory=63,grow_memory=64, i32_const=65, i64_const=66, f32_const=67, f64_const=68,
+    memory_size=63,memory_grow=64, i32_const=65, i64_const=66, f32_const=67, f64_const=68,
     i32_eqz=69, i32_eq=70, i32_ne=71,
-    i32_add=106,i32_sub=107,i32_mul=108
+    i32_lt_s=0x48,i32_lt_u=0x49,i32_gt_s=0x4a,i32_gt_u=0x4b,i32_le_s=0x4c,i32_le_u=0x4d,i32_ge_s=0x4e,i32_ge_u=0x4f,
+
+    i32_add=106,i32_sub=107,i32_mul=108,i32_div_s=109,
+    i32_and = 0x71,i32_or=0x72,i32_xor=0x73,i32_shl=0x74,i32_shr_s=0x75,i32_shr_u=0x76,i32_rotl=0x77,i32_rotr=0x78,
+    f32_abs=0x8b,f32_neg=0x8c,f32_ceil=0x8d,f32_floor=0x8e,f32_trunc=0x8f,f32_nearest=0x90,f32_sqrt=0x91,
+
 }
-export enum sectionCode {TYPE=1,IMPORT=2,FUNCTION=3,TABLE=4,MEMORY=5,GLOBAL=6,EXPORT=7,START=8,ELEMENT=9,CODE=10,DATA=11};
+export enum sectionCode {TYPE=1,IMPORT=2,FUNCTION=3,TABLE=4,MEMORY=5,GLOBAL=6,EXPORT=7,START=8,ELEMENT=9,CODE=10,DATA=11}
