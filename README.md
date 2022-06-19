@@ -18,8 +18,7 @@ Forth Inspired WebAssembler
 
 ## 開發與執行
 - 初階：打開 dist/index.html。只須略懂Forth ，不必懂 Javascript。
-- 中階：打開 DevTool，學習單步除錯，往返 Javascript 和 WebAssembly 世界 (目前還沒有SourceMap ，只能看到 WAT )
-可以在DevTools 的源代碼看到 8 個hex 的檔名，就是編好的 WAT (WebAssemblyText)，使用的語法是 S 語言，LISP血統。
+- 中階：打開 DevTool，學習單步除錯，穿梭 V8 和 WebAssembly 世界，在DevTools 的源代碼看到 8 個hex 的檔名，就是編好的 ，WebAssemblyText，語法是LISP血統的 S 語言。
 - 高階：安裝 esbuild (推薦) ，執行 dev.cmd ，或 node run dev ，修改 TypeScript 。
 
 ## 與傳統Forth差異
