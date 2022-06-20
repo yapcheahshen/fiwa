@@ -1,11 +1,16 @@
 const compiled='';
 const clearLog=e=>document.querySelector("#log").innerHTML='';
 const clearError=e=>document.querySelector("#error").innerHTML='　';
-
-const onLog=e=> {
-  const log=document.querySelector("#log");
-  log.insertAdjacentHTML('afterbegin','<div>'+e+'</div>');
-  if (log.childElementCount>10 ) log.removeChild(log.lastChild);
+let logBuffer='';
+const onLog=(str,flush)=> {
+  if (flush) {
+    const log=document.querySelector("#log");
+    log.insertAdjacentHTML('afterbegin','<div>'+logBuffer+str+'</div>');
+    if (log.childElementCount>10 ) log.removeChild(log.lastChild);
+    logBuffer='';
+  } else {
+    logBuffer+=str;
+  }
 }
 const onError=e=>document.querySelector("#error").innerHTML=e;
 const showSymbols=syms=>document.querySelector("#symbols").innerHTML=Object.keys(syms);
@@ -18,7 +23,7 @@ function compileMe(){
      clearError();
      fiwasource=document.querySelector("#fiwasrc").value;
      const symbols=await fiwa.execute(fiwasource);  //返回exports
-     showSymbols(symbols);
+     symbols&&showSymbols(symbols);
   },250);
 }
 
@@ -41,7 +46,7 @@ const loadwasm=async ()=>{
   const file=await fileHandle.getFile();
   const bytecode=new Uint8Array(await file.arrayBuffer());
   const symbols=await fiwa.instantiate(bytecode);
-  if (symbols) showSymbols(symbols)
+  symbols&&showSymbols(symbols)
 }
 
 compileMe();

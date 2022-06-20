@@ -4,3 +4,7 @@ export const ztype = function(pos:number){
 	const str=(new TextDecoder('utf-8')).decode(buffer).replace(/\0+$/,' ').trim();
 	this.onLog( str );
 }
+
+export const dot = function (n:number) {
+	this.onLog( ' '+n );
+}

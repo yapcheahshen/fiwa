@@ -1,7 +1,7 @@
 ﻿/* runs on browser only*/
 import {ModuleWriter,CodeWriter,TypeWriter,Var}   from './src/codegen.ts';
 import Assembler from './src/assembler.ts';
-import {ztype} from './src/js4forth.ts';
+import {ztype,dot} from './src/js4forth.ts';
 import {bundleWasm} from './src/wasm.ts'
 export class Fiwa {
 	byteCodes: Uint8Array;
@@ -11,7 +11,7 @@ export class Fiwa {
 		this.onError=onError;
 		this.onLog=onLog;
 		this._mem = new WebAssembly.Memory({initial:1});
-		this.imports={	env:{ztype: ztype.bind(this) , _mem:this._mem}};
+		this.imports={	env:{ztype: ztype.bind(this) , _mem:this._mem, ".":dot.bind(this)}};
 		this.exportMem=exportMem||false;
 		this.byteCodes=[];
 		this.memory=memory||10 //maximum 640 kB, minimum is 64KB
@@ -22,7 +22,7 @@ export class Fiwa {
 		    
 		    if (wa.instance.exports._start) { //定義了 _start
 		    	const ret=wa.instance.exports._start(arg);
-		    	this.onLog&&this.onLog('>'+ret);
+		    	this.onLog&&this.onLog('⏎'+ret, true);
 		    }
 		    //this._mem=wa.instance.exports._mem;
 		    //console.log('mem',this._mem)
@@ -34,7 +34,7 @@ export class Fiwa {
 
 	}
 	async execute(buf,arg){
-		const A=new Assembler({_mem:this._mem, exportMem:this.exportMem,imports:{ztype:[1,0]}})
+		const A=new Assembler({_mem:this._mem, exportMem:this.exportMem,imports:{ztype:[1,0],".":[1,0]}})
 		try{
 			this.boot.forEach(bootcode=>A.assemble(bootcode));
 			A.assemble(buf);
