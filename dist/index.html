@@ -7,54 +7,74 @@
   <style>
     textarea {font-size:125%}
     #error {color: red}
+    a {cursor: pointer;}
   </style>
   <script src="index.js"></script> <!-- create by npm run build -->
   <script src="corewords.js"></script> <!-- fiwa core words -->  
   <script src="usercode.js"></script>   <!-- user code-->
+  <script defer src="ui.js"></script>
 
+<!--
+devtools save wasm to base64
+use this line to see the 
+new TextEncoder("ascii").encode(atob("--a base64 string"))
+right click on the Arraybuffer in devtools (memory inspector)
+-->
 </head>
 <body>
     <div>FIWA 符示織網 Forth Inspired WebAssembler</div>
     <div id="error">　</div>
+
     <textarea rows='11' cols='50' id="fiwasrc" onInput="compileMe()">
-:cube ( a -- 1 ) dup * a * ;cube  \ a是參數命名，1 表示1個返回值
+
+\ 只提供參數個數，直接在 stack 上
+:square ( 1 -- 1 ) dup * ;square     \ 參數已在stack 上
+:square2 ( a -- 1 ) a dup * ;  \ 如果將參數命名，則不會在stack 上
+
+\ 參數命名，用名字取用
+\ :cube ( a -- 1 ) a a dup * * ;cube  \ a是參數命名，1 表示1個返回值
 \ 在 :  ; 外的字不是直譯，而是編入 main，執行後返回值顯示在下方。
-:localx ( a -- 1 x ) x! x dup * ;
-3 localx 10 < if 
-    9
-else
-    99
-then
-\\ cube   \\ 返回值
+\ 右邊如果有符號表示區域變數，返回個數為零可以省略
+\ :localx ( a -- 1 x ) =x x dup * ;
 
+\ 2 square
+\ "Hello 世界" ztype
+\   \ 返回字串在記憶體中的位置 ，不返回字串長度
+\ "another string" drop
+\ 100
+ $0 $1 *
     </textarea><br/>
-    <button onclick="javascript:clearLog()">🗑</button>
-    <label><input type="checkbox" checked=true id="autocompile" title="interactive">🗪</input></label>
+    <!--
 
+
+\ 2 $G1  \ 定義一個全域變數a 並將值初始化為 2 ，或字串
+
+\ memory 從 0 開始 
+
+\ 0x12345678 4 ! 4 @   \ 在 位址 4 寫入0x12345678。 可以在 devTools 看 _mem   ， ! 是高階字 ，@是低階字
+\ 8 0x4422 i32_store \ 這樣寫較快
+
+\ 2 :G1  \ 定義一個全域變數a 並將值初始化為 2 ，或字串
+\ G!   \  變數和記憶體在不同空間，用 ! 賦值
+\ G@    \ 以 ! 取值
+\ G    \ a 這個操作取得 Global ID，而不是他的位置
+
+\ "定義一個字串並留下位置" 
+
+runtime
+wasmer   output.wasm 參數 
+wasmtime output.wasm  353
+
+    -->
+
+    <a onclick="javascript:clearLog()" title="Clear log">🗑</a>
+    <label><input type="checkbox" checked=true id="autocompile" title="Interactive">🗪</input></label>
+    <a title="Save as wasm" onclick="javascript:bundle()">📤</a>
+    <a title="load wasm" onclick="javascript:loadwasm()">📥</a>
+    <span id="symbols"></span>
     <div id="log"></div>
 </body>
   <script>
-     const clearLog=e=>document.querySelector("#log").innerHTML='';
-     const clearError=e=>document.querySelector("#error").innerHTML='　';
-     const onLog=e=> {
-        const log=document.querySelector("#log");
-        log.insertAdjacentHTML('afterbegin','<div>'+e+'</div>');
-        if (log.childElementCount>10 ) log.removeChild(log.lastChild);
-    }
-     const onError=e=>document.querySelector("#error").innerHTML=e;
 
-     const fiwa=new Fiwa({boot:[corewords,usercode],onError,onLog});
-     let timer;
-     function compileMe(){
-        if (!document.querySelector("#autocompile").checked)return;
-        clearTimeout(timer);
-        timer=setTimeout(async ()=>{   
-           clearError();
-           fiwasource=document.querySelector("#fiwasrc").value;
-           const symbols=await fiwa.execute(fiwasource); 
-           //console.log(symbols)      //WebAssembly export 的符號
-        },250);
-     }
-     compileMe();
   </script>
 </html>

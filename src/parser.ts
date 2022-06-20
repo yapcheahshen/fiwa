@@ -8,10 +8,14 @@ export const parseParenthesis = (par: string) => {
   let locals = []; //區域變數的型別，每個字都要個別存。
   let resultCount = 0; //返回值的個數
   par = par.slice(1, par.length - 1);
-  const items = par.split("--"); //分成左右兩部分
+  const items = par.split(/\-+/); //分成左右兩部分
   if (items.length == 1) items.push("0"); //右邊沒指定，或是少了 -- ，即是無返回值  void
   if (items.length == 2) {
     params = items[0].split(/ +/).filter((it) => !!it); //params 重名未檢查(a a -- )不要這樣寫
+    const paramcount=parseInt(params[0]);
+    if (params.length==1 && paramcount.toString()==params[0]) { //只給參數個數，呼叫函式時自動推stack。
+    	params=Array(paramcount).fill().map((it,idx)=>'$'+idx); // 用 $0 來取parameter 及 local
+    } //如果參數有命名，則不會推到stack, 見assembler :: colon
 
     locals = items[1].split(/[\r\n ]+/).filter((it) => !!it);
     locals.forEach((l) =>

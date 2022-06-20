@@ -5,15 +5,15 @@ export const QSTRING_REGEX_G= /"((?:\\.|.)*?)"/g
 export const QUOTE_PREFIX='\u0010';
 export const PARENTHESIS_REGEX_G= /\(((?:\\.|.)*?)\)/g
 export const PARENTHESIS_PREFIX='\u0011';
-const replacePat=(buf:string,pat,prefix)=>{
-	const quotes=[];
+const replacePat=(buf:string,pat:RegExp,prefix:string):[string, string[] ]=>{
+	const quotes:string[]=[];
 	const newbuf=buf.replace(pat,(_m,m1)=>{
 	        quotes.push(m1);
 	        return prefix+(quotes.length-1);
 	});
 	return [newbuf,quotes];
 }
-export const tokenize=(buf:string)=>{
+export const tokenize=(buf:string):string[]=>{
 	buf=buf.replace(/\\[^\n]+/g,''); //remove comment
 	const [buf2,quotes]=replacePat(buf , QSTRING_REGEX_G ,QUOTE_PREFIX );
 	const [buf3,parenthesis]=replacePat(buf2, PARENTHESIS_REGEX_G,PARENTHESIS_PREFIX);

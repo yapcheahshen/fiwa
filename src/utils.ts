@@ -39,4 +39,5 @@ export const eqFuncTypes = function(type_data) {
         }
         return true;
     }
-};
+}
+export const validExportName =str=> str.match(/^[$A-Z_][0-9A-Z_$]*$/i);

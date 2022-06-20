@@ -1,16 +1,25 @@
 /* 輸出WebAssembly 指令集*/
 import {encInt,encUInt} from './utils.ts'
-import {Inst,Var} from './constants.js'
-export class CodeWriter {
-	constructor (local_types:[]) {
+import {Inst,Var,bytecode} from './constants.ts'
+import {Writer} from './writers.ts'
+export class CodeWriter extends Writer {
+	_localTypes: bytecode[];
+	_code: bytecode[];
+	name: string;
+	type: bytecode[];
+	_functionLinks : ({location: number, name:string})[ ];
+	constructor (local_types:bytecode[]) {
+		super();
 	    this._localTypes = local_types ? local_types : [];
 	    this._code = [];
-	    this._functionlinks = [];
+	    this._functionLinks = [];
+		this.name='';
+		this.type=[];
 	}
-	setName(name){
+	setName(name:string){
 		this.name=name;
 	}
-	setType(type){
+	setType(type:bytecode[]){
 		this.type=type;
 	}
 	write() { //need setName
@@ -23,20 +32,20 @@ export class CodeWriter {
 
 	unreachable(){this._code.push(Inst.unreachable)	}
 	nop()        {this._code.push(Inst.nop)	        }
-	block(r_t)   {this._code.push(Inst.block,r_t||Var.i32)	}
-	loop(r_t)    {this._code.push(Inst.loop,r_t||Var.i32)	}
-	if(r_t)      {this._code.push(Inst.if,r_t||Var.i32)	}
+	block(r_t:Var)   {this._code.push(Inst.block,r_t||Var.i32)	}
+	loop(r_t:Var)    {this._code.push(Inst.loop,r_t||Var.i32)	}
+	if(r_t:Var)      {this._code.push(Inst.if,r_t||Var.i32)	}
 	else()              {this._code.push(Inst.else)	}
 	end()               {this._code.push(Inst.end)	}
 	br(depth:number)    {this._code.push(Inst.br,depth)	}
 	br_if(depth:number) {this._code.push(Inst.br_if,depth)	}
 	ret()               {this._code.push(Inst.return)	}
 	call(name:string|number) {
-		if (typeof idx_name==='number') {
-			this._code.push(Inst.call,...encUInt(idx_name));
+		if (typeof name==='number') {
+			this._code.push(Inst.call,...encUInt(name));
 		} else { //call by name
 			this._code.push(Inst.call); 
-			this._functionlinks.push({location: this._code.length, name});
+			this._functionLinks.push({location: this._code.length, name});
 		}
 	}
 	drop() {this._code.push(Inst.drop)	}
@@ -44,31 +53,31 @@ export class CodeWriter {
 	get_local(i:number) {this._code.push(Inst.get_local, ...encUInt(i)) }
 	set_local(i:number) {this._code.push(Inst.set_local, ...encUInt(i)) }
 	tee_local(i:number) {this._code.push(Inst.tee_local, ...encUInt(i)) }
-	i32_load(offset,align:number) {this._code.push(Inst.i32_load, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load(offset,align:number) {this._code.push(Inst.i64_load, ...encUInt(align||0),...encUInt(offset)) }
-	f32_load(offset,align:number) {this._code.push(Inst.f32_load, ...encUInt(align||0),...encUInt(offset)) }
-	f64_load(offset,align:number) {this._code.push(Inst.f64_load, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load8_s(offset,align:number) {this._code.push(Inst.i32_load8_s, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load8_u(offset,align:number) {this._code.push(Inst.i32_load8_u, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load16_s(offset,align:number) {this._code.push(Inst.i32_load16_s, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load16_u(offset,align:number) {this._code.push(Inst.i32_load16_u, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load8_s(offset,align:number) {this._code.push(Inst.i64_load8_s, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load8_u(offset,align:number) {this._code.push(Inst.i64_load8_u, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load16_s(offset,align:number) {this._code.push(Inst.i64_load16_s, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load16_u(offset,align:number) {this._code.push(Inst.i64_load16_u, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load32_s(offset,align:number) {this._code.push(Inst.i64_load32_s, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load32_u(offset,align:number) {this._code.push(Inst.i64_load32_u, ...encUInt(align||0),...encUInt(offset)) }
-	i32_store(offset,align:number) {this._code.push(Inst.i32_store, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store(offset,align:number) {this._code.push(Inst.i64_store, ...encUInt(align||0),...encUInt(offset)) }
-	f32_store(offset,align:number) {this._code.push(Inst.f32_store, ...encUInt(align||0),...encUInt(offset)) }
-	f64_store(offset,align:number) {this._code.push(Inst.f64_store, ...encUInt(align||0),...encUInt(offset)) }
-	i32_store8(offset,align:number) {this._code.push(Inst.i32_store8, ...encUInt(align||0),...encUInt(offset)) }
-	i32_store16(offset,align:number) {this._code.push(Inst.i32_store16, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store8(offset,align:number) {this._code.push(Inst.i64_store8, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store16(offset,align:number) {this._code.push(Inst.i64_store16, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store32(offset,align:number) {this._code.push(Inst.i64_store32, ...encUInt(align||0),...encUInt(offset)) }
+	i32_load(offset:number,align:number) {this._code.push(Inst.i32_load, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load(offset:number,align:number) {this._code.push(Inst.i64_load, ...encUInt(align||0),...encUInt(offset)) }
+	f32_load(offset:number,align:number) {this._code.push(Inst.f32_load, ...encUInt(align||0),...encUInt(offset)) }
+	f64_load(offset:number,align:number) {this._code.push(Inst.f64_load, ...encUInt(align||0),...encUInt(offset)) }
+	i32_load8_s(offset:number,align:number) {this._code.push(Inst.i32_load8_s, ...encUInt(align||0),...encUInt(offset)) }
+	i32_load8_u(offset:number,align:number) {this._code.push(Inst.i32_load8_u, ...encUInt(align||0),...encUInt(offset)) }
+	i32_load16_s(offset:number,align:number) {this._code.push(Inst.i32_load16_s, ...encUInt(align||0),...encUInt(offset)) }
+	i32_load16_u(offset:number,align:number) {this._code.push(Inst.i32_load16_u, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load8_s(offset:number,align:number) {this._code.push(Inst.i64_load8_s, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load8_u(offset:number,align:number) {this._code.push(Inst.i64_load8_u, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load16_s(offset:number,align:number) {this._code.push(Inst.i64_load16_s, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load16_u(offset:number,align:number) {this._code.push(Inst.i64_load16_u, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load32_s(offset:number,align:number) {this._code.push(Inst.i64_load32_s, ...encUInt(align||0),...encUInt(offset)) }
+	i64_load32_u(offset:number,align:number) {this._code.push(Inst.i64_load32_u, ...encUInt(align||0),...encUInt(offset)) }
+	i32_store(offset:number,align:number) {this._code.push(Inst.i32_store, ...encUInt(align||0),...encUInt(offset)) }
+	i64_store(offset:number,align:number) {this._code.push(Inst.i64_store, ...encUInt(align||0),...encUInt(offset)) }
+	f32_store(offset:number,align:number) {this._code.push(Inst.f32_store, ...encUInt(align||0),...encUInt(offset)) }
+	f64_store(offset:number,align:number) {this._code.push(Inst.f64_store, ...encUInt(align||0),...encUInt(offset)) }
+	i32_store8(offset:number,align:number) {this._code.push(Inst.i32_store8, ...encUInt(align||0),...encUInt(offset)) }
+	i32_store16(offset:number,align:number) {this._code.push(Inst.i32_store16, ...encUInt(align||0),...encUInt(offset)) }
+	i64_store8(offset:number,align:number) {this._code.push(Inst.i64_store8, ...encUInt(align||0),...encUInt(offset)) }
+	i64_store16(offset:number,align:number) {this._code.push(Inst.i64_store16, ...encUInt(align||0),...encUInt(offset)) }
+	i64_store32(offset:number,align:number) {this._code.push(Inst.i64_store32, ...encUInt(align||0),...encUInt(offset)) }
 	memory_size() {this._code.push(Inst.memory_size,0)}
-	memory_grow() {this._code.push(Inst.grow_memory,0)}
+	memory_grow() {this._code.push(Inst.memory_grow,0)}
 	// memory_init , memory_fill , memory_copy data_drop
 	i32_const(v:number) {this._code.push(Inst.i32_const,...encInt(v))}
 	i64_const(v:number) {this._code.push(Inst.i64_const,...encInt(v))}
