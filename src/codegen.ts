@@ -26,16 +26,16 @@ export class ModuleWriter {
 	    this._codes     = [];
 	    this._globals   = [];
 	    this._datum     = [];
-	    this._memory= (opts.memory>1)?[ [1,1, opts.memory]]:[[0,1]]; //always use 64KB
+	    this._memory= [];//[ [1,1, opts.memory]]:[[0,1]]; //always use 64KB
 	}
 	exportExtra(){
 		//export memory=2,global=3
-		const exportWriter = new ExportWriter("_mem", ExternalKind.memory); //only one memory area 
-    	this._exports.push(exportWriter);
+		//const exportWriter = new ExportWriter("_mem", ExternalKind.memory); //only one memory area 
+    	//this._exports.push(exportWriter);
     }
-	gen({exportMem:boolean=false,datasize:number}) {
+	gen({datasize:number}) {
 		const output = [];
-    	//if (exportMem) this.exportExtra();
+    	this.exportExtra();
  
 	    this.resolveFunctionNames();
 	    const wasm_header = [0,97,115,109,1,0,0,0]; //.asm....
@@ -82,6 +82,10 @@ export class ModuleWriter {
     	const importWriter = new ImportWriter(mod, exportname, ExternalKind.function);
     	importWriter.setName(name);
     	importWriter.setType(signature);
+    	this._imports.push(importWriter);
+	}
+	importMemory(name:string,mod:string) {
+    	const importWriter = new ImportWriter(mod, name, ExternalKind.memory);
     	this._imports.push(importWriter);
 	}
 	addFunction (name:string, signature:bytecode[] ,codeWriter:CodeWriter) {

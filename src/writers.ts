@@ -67,7 +67,7 @@ export class ImportWriter extends Writer {
 		this._mod=mod;
 		this._field=field;
 		this._kind=kind;
-		this.type=[];
+		this.type=null;
 		this.typeIndex=0;
 		this.name='';
 	}
@@ -83,7 +83,12 @@ export class ImportWriter extends Writer {
 	    const field_bytes = encUIntString(this._field);
 	    output.push(...encUInt(module_bytes.length), ...module_bytes);
 	    output.push(...encUInt(field_bytes.length), ...field_bytes);
-	    output.push( this._kind, ...encUInt(this.typeIndex)); //strange!!!
+	    output.push( this._kind);
+	    if (this._kind==ExternalKind.memory) {
+	    	output.push(0,1);
+	    } else {
+	    	output.push(...encUInt(this.typeIndex));
+	    }
 	    return output;
 	}	
 }

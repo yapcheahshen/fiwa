@@ -29,9 +29,10 @@ export default class Assembler {
     this.here        = 0 ; // string literals writing address, 
     this.symbols = {}; //已知的符號，未解析地址
     this._start = new CodeWriter([]); //如果不在 : ; 之內，則編入 _start
+    this._mem=opts._mem;
     this.colonWriter = this._start; //一開始就是編入_start ，一進入 : colonWriter 改為正在編的字，; 後就切回 _start
     //生成WebAssembly 目的包 *.wasm 格式
-    this.moduleWriter = new ModuleWriter({ memory: opts.memory || 1 }); //配置memory*64KB ，0或都表示至少配64KB
+    this.moduleWriter = new ModuleWriter(); //{ memory: opts.memory || 1 }外部配置memory*64KB ，0或都表示至少配64KB
   }
   colon(tk:string, nexttk:string): number {
     let skip = 0;
@@ -154,10 +155,15 @@ export default class Assembler {
     }
   }
   codeGen() {
+    if (this._mem) {
+      this.moduleWriter.importMemory('_mem','env');
+    }
+
   	for (let name in this.imports) {
-  		const signature=makeSignature(this.imports[name],1);//make a signature  
-  		this.moduleWriter.importFunction(name, signature, 'js', name)
+  		const signature=makeSignature(...this.imports[name]);//make a signature  
+  		this.moduleWriter.importFunction(name, signature, 'env', name); 
   	}
+
     this._start.end(); //結束編譯 main ，必須留一個值在stack 上
     this.moduleWriter.addFunction("_start", makeSignature(2,1) , this._start); //_start internal name
     this.moduleWriter.exportFunction("_start", "_start"); //在js 的名字是main

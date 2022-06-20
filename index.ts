@@ -10,9 +10,8 @@ export class Fiwa {
 		if (typeof this.boot=='string') this.boot=[this.boot];
 		this.onError=onError;
 		this.onLog=onLog;
-		this.imports={}
-			//js:{ztype}		};
-		this._mem;
+		this._mem = new WebAssembly.Memory({initial:1});
+		this.imports={	env:{ztype: ztype.bind(this) , _mem:this._mem}};
 		this.exportMem=exportMem||false;
 		this.byteCodes=[];
 		this.memory=memory||10 //maximum 640 kB, minimum is 64KB
@@ -25,7 +24,8 @@ export class Fiwa {
 		    	const ret=wa.instance.exports._start(arg);
 		    	this.onLog&&this.onLog('>'+ret);
 		    }
-		    this._mem=wa.instance.exports._mem;
+		    //this._mem=wa.instance.exports._mem;
+		    //console.log('mem',this._mem)
 		    return wa.instance.exports;
 
 		} catch(e) {
@@ -34,7 +34,7 @@ export class Fiwa {
 
 	}
 	async execute(buf,arg){
-		const A=new Assembler({memory:this.memory, exportMem:this.exportMem,imports:{} }); //{ ztype:1}
+		const A=new Assembler({_mem:this._mem, exportMem:this.exportMem,imports:{ztype:[1,0]}})
 		try{
 			this.boot.forEach(bootcode=>A.assemble(bootcode));
 			A.assemble(buf);
