@@ -2,3 +2,5 @@
 *.png
 releases
 *.msi
+*.zip
+*.7z

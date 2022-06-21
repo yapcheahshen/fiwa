@@ -1,172 +1,106 @@
-﻿import { Var, CodeWriter,  ModuleWriter,  one_one,  makeSignature ,TypeWriter,  Var} from "./codegen.ts";
-import { tokenize } from "./tokenizer.ts";
-import { parseParenthesis } from "./parser.ts";
-import { Instructions } from "./instructions.ts";
-type bytecode = number;
-const invalidName = (n:string) =>
-  !n || n.startsWith("_") || n.startsWith("=") || n.endsWith(")") ||
-  n.endsWith('"');
-const makeType = (names:string[]) => names.map(() => Var.i32); //only i32
-
-export default class Assembler {
-  colonName: string;
-  colonSignature: number[];
-  colonParams:string[];
-  colonLocals:string[]
-  symbols: Map<string,boolean>;
-  imports: Map<string,number>;
-  _start : CodeWriter;
-  colonWriter: CodeWriter;
-  moduleWriter : ModuleWriter;
+﻿import { ModuleWriter, CodeWriter,  makeSignature } from "./codegen.ts";
+import { ColonContext, doColon , doSemiColon } from "./colon.ts";
+import { doGlobal, doVar } from "./variable.ts";
+import { doLit } from "./literal.ts";
+import {START} from "./constants.ts"
+interface FiwaAssembler { 
   opts :{};
+  moduleWriter : ModuleWriter;
+  imports: Map<string,number>;     //imports from runtime
+  colonWriter:   CodeWriter;       //current compiling forth word
+  startWriter :CodeWriter;              //wasm entry function, like main in C
+  done:boolean;
+  globals:Map<string,boolean>;     //global variables
+  words  :Map<string, WordContext>;//defined and defining words
+  word:string;                     //the word being compiled, empty if in main
+  private tib:string;              //terminal input buffer
+  private ntib:number;             //tib pointer
+  here:number;                     //memory pointer
+  assemble(buf: string):void;
+  getContext():Map;
+  genByteCode():void;
+}
+export default class Assembler implements FiwaAssembler {
   constructor(opts) {
-  	this.imports=opts.imports|| {};
     this.opts=opts||{};
-    this.colonName = "";
-    this.colonSignature =[];
-    this.colonParams = [];
-    this.colonLocals = [];
-    this.here        = 0 ; // string literals writing address, 
-    this.symbols = {}; //已知的符號，未解析地址
-    this._start = new CodeWriter([]); //如果不在 : ; 之內，則編入 _start
-    this._mem=opts._mem;
-    this.colonWriter = this._start; //一開始就是編入_start ，一進入 : colonWriter 改為正在編的字，; 後就切回 _start
-    //生成WebAssembly 目的包 *.wasm 格式
-    this.moduleWriter = new ModuleWriter(); //{ memory: opts.memory || 1 }外部配置memory*64KB ，0或都表示至少配64KB
+  	this.imports=this.opts.imports|| {};
+    this.words = {};                   //已知的符號，未解析地址
+    this.word  = START;                //正在編的字
+    this.globals={};                   //Global Varibles and Constants
+    this.startWriter = new CodeWriter([]);  //如果不在 : ; 之內，則編入 _start
+    this.colonWriter = this.startWriter;    //一開始就是編入_start ，一進入 : colonWriter 改為正在編的字，; 後就切回 _start
+    this.moduleWriter = new ModuleWriter(); //{ memory: opts.memory || 1 }外部配置memory*64KB ，0或都表示至少配64KB    
+    this.tib='';
+    this.ntib=0;
+    this.here= 0 ;
+    this.prolog();
   }
-  colon(tk:string, nexttk:string): number {
-    let skip = 0;
-    if (this.colonName) {
-      throw this.colonName + "word not finished yet ";
+  protected nextToken(peek=false):string {//codePointAt 能正確讀一個 UTF32 字元
+    let token="", ntib=this.ntib;
+    const tib=this.tib;
+    while (tib.codePointAt(ntib)<=0x20) ntib++; //skip blank characters
+    while (ntib<tib.length && tib.codePointAt(ntib)>0x20 ) {
+      token+=String.fromCodePoint(tib.codePointAt(ntib++));
     }
-    this.colonName = tk.slice(1);
-    if (this.symbols[this.colonName]) {
-      throw "repeat defination " + this.colonName;
-    }
-    if (invalidName(this.colonName)) {
-      throw "invalid name " + this.colonName;
-    }
-    this.symbols[this.colonName] = true;
-    let params : string[]=[], locals : string[]=[], resultsType :bytecode[]=[];
-    if (nexttk[0] === "(") { //最好有，沒有的話 就是 ( a -- 1 ) 一進一出
-      [params, locals, resultsType] = parseParenthesis(nexttk);
-      skip++;
-    }
-    this.colonParams = params;
-    this.colonLocals = locals;
-    this.colonWriter = new CodeWriter(makeType(locals));
-    this.colonWriter.setName(this.colonName);
-    this.colonSignature = new TypeWriter(makeType(params), resultsType).write(); //函式的簽名
-
-    //參數只有序號 $0  , 自動 push 到 stack
-    if (params.length&&params.length==params.filter(it=>it[0]=='$').length) {
-	    for (let j = 0; j < params.length; j++) {
-	      this.colonWriter.get_local(j); //push parameter on stack
-	    }
-	}
-    return skip;
+    if (!peek) this.ntib=ntib;
+    return token;
   }
-  semicolon(tk:string): void {
-    const exportname = tk.slice(1);
-    this.colonWriter.end();
-    this.moduleWriter.addFunction(
-      this.colonName,
-      this.colonSignature,
-      this.colonWriter,
-    );
-    if (exportname) {
-      this.moduleWriter.exportFunction(this.colonName, exportname);
-    }
-    this.colonName = "";
-    this.colonWriter = this._start;
+  private skipComment(tk):void { //manipulate tib is not a good practice but much easier
+    let ntib=this.ntib;
+    const tib=this.tib;
+    if (tk[0]=='\\') {
+      while ( ntib <tib.length && tib.codePointAt(ntib)>=0x20) ntib++;
+    } else if (tk[0]=='(') {
+      while ( ntib <tib.length && tib.charAt(ntib)!==')') ntib++;
+      ntib++; //skip )
+    } // console.log('comment',tib.slice(this.ntib,ntib));
+    this.ntib=ntib;
   }
-  tryLit(tk:string): void {
-  	if (tk[0]=='"') { //a string literal, 
-  		let s=tk.slice(1);
-  		if (s[s.length-1]=='"') s=s.slice(0,s.length-1);
-  		this.colonWriter.i32_const(this.here);
-  		this.here= this.moduleWriter.addString(this.here, s) ;
-  	} else if (parseInt(tk).toString() == tk) { //十進位數
-    	this.colonWriter.i32_const(parseInt(tk));
-    } else if (
-    	tk.slice(0, 2) == "0x" && "0x" + parseInt(tk, 16).toString(16) == tk) { //十六進位數
-    	this.colonWriter.i32_const(parseInt(tk, 16));
-    } else {
-    	if (tk !== "_start") { //因為 js 會自動進入 _start ，不能重覆叫它
-        	this.colonWriter.call(tk); //token作為函式名，在codegen::resolveFunctionNames 會回填位址
-      	} else {
-            throw "cannot call _start in forth program";
-        }
+  private prolog(){
+    const signature = makeSignature(2,0) ;
+    this.word=START;
+    this.words[START]={name:START, params:['$0','$1'], locals:['i','j','k'] , signature};
+  }
+  private epilog(){
+    if (this.word!==START) doSemiColon.call(this);//強制結束
+    this.word=START;
+    this.startWriter.end(); //結束編譯 main ，必須留一個值在stack 上
+    const {signature}=this.compiling();
+    this.moduleWriter.addFunction(START, signature, this.startWriter); //_start internal name
+    this.moduleWriter.exportFunction(START, START); //在js 的名字是main
+  }
+  compiling():WordContext{
+    return this.words[this.word];
+  }
+  setTib(buf:string):void{
+    this.tib=buf;
+    this.ntib=0;
+  }
+  assemble(buf: string):void {
+    this.setTib(buf);
+    while (this.ntib<this.tib.length) {
+      const tk=this.nextToken();
+      if (tk[0]==='('||tk[0]==='\\')  this.skipComment(tk);
+      else if (tk[0] === ':')         doColon.call(this,tk);
+      else if (tk[0] === ';')         doSemiColon.call(this,tk);
+      // else if (tk[0] === '$')         doGlobal.call(this,tk);
+      // else doVar.call(this,tk) ||     doLit.call(this,tk)
     }
   }
-  tryVariables(tk:string): boolean {
-    let assignment = false;
-    if (!Instructions[tk] && tk[0] == "=") { //變數賦值
-      assignment = true;
-      tk = tk.slice(1);
-    }
-
-    let paramIndex = -1;
-
-    let localIndex = -1;
-    if (tk[0]=='$' && parseInt(tk.slice(1)).toString()==tk.slice(1)) {
-    	paramIndex=parseInt(tk.slice(1));
-    } else {
-	    paramIndex=this.colonParams.indexOf(tk);
-	    if (paramIndex==-1) localIndex=this.colonLocals.indexOf(tk);
-    }
-
-    if (~paramIndex || ~localIndex) { //是參數或區域變數？
-      let idx = paramIndex;
-      if (~localIndex) {
-        idx = this.colonParams.length + localIndex; //local vars 的index要加上 params count
-      }
-      if (assignment) { //變數賦值
-        this.colonWriter.set_local(idx);
-      } else {
-        this.colonWriter.get_local(idx);
-      }
-      return true;
-    }
-    return false;
+  getContext():Map{
+    return {here:this.here};
   }
-  assemble(buf: string) {
-    if (!buf.trim()) return;
-    const tokens = tokenize(buf); //切分為執行單元
-    let i = 0;
-    while (i < tokens.length) {
-      let tk = tokens[i];
-      if (tk[0] == ":") { //定義字
-        i += this.colon(tk, tokens[i + 1]);
-      } else if (tk[0] == ";") { //結束這個字，; 後面是 export 名
-        this.semicolon(tk);
-      } else if (tk[0] == "(") { //不在定義字後的只是註解
-      } else {
-        if (!this.tryVariables(tk)) {
-          if (Instructions[tk]) { //是否是內建指令
-            const inst = this.colonWriter[Instructions[tk]];
-            if (inst) inst.apply(this.colonWriter);
-          } else {
-            this.tryLit(tk);
-          }
-        }
-      }
-      i++;
-    }
-  }
-  codeGen() {
-    if (this._mem) {
+  genByteCode():void {
+    if (this.opts._mem) {
       this.moduleWriter.importMemory('_mem','env');
     }
-
-  	for (let name in this.imports) {
-  		const signature=makeSignature(...this.imports[name]);//make a signature  
-  		this.moduleWriter.importFunction(name, signature, 'env', name); 
-  	}
-
-    this._start.end(); //結束編譯 main ，必須留一個值在stack 上
-    this.moduleWriter.addFunction("_start", makeSignature(2,1) , this._start); //_start internal name
-    this.moduleWriter.exportFunction("_start", "_start"); //在js 的名字是main
+    /*
+    for (let name in this.imports) {
+      const signature=makeSignature(...this.imports[name]);//make a signature  
+      this.moduleWriter.importFunction(name, signature, 'env', name); 
+    } 
+    */   
+    this.epilog(); //epilog 之後再叫 assemble 會出錯，讓 codeGen 報錯，Assembler 不檢查。
     return this.moduleWriter.gen({datasize:this.here , ...this.opts});
   }
 }

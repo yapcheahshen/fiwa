@@ -2,9 +2,7 @@
 import {encUInt,encUIntString} from './utils.ts'
 import {Var,bytecode,ExternalKind,Inst} from './constants.ts'
 export class Writer {
-	write(){
-
-	}
+	write(){}
 }
 export class FunctionWriter extends Writer {
 	type:number;
@@ -32,11 +30,13 @@ export class TypeWriter extends Writer {
 		return out;
 	}
 }
-export class ExportWriter extends Writer {
+interface IExportWriter {
 	_field:string;
 	_index:number;
 	_kind:ExternalKind;
 	name:string;
+}
+export class ExportWriter extends Writer implements IExportWriter{
 	constructor(field:string,kind:ExternalKind,index:number=0){
 		super();
 		this._field=field; //name for outside world
@@ -55,13 +55,15 @@ export class ExportWriter extends Writer {
 	    return out;
 	}
 }
-export class ImportWriter extends Writer {
+interface IImportWriter {
 	_mod:string;
 	_field:string;
 	_kind:ExternalKind;
 	name:string;
 	type:bytecode[];
 	typeIndex:number;//resolve by codegen
+}
+export class ImportWriter extends Writer implements IImportWriter{
 	constructor (mod:string, field:string, kind:ExternalKind){
 		super();
 		this._mod=mod;
@@ -92,11 +94,12 @@ export class ImportWriter extends Writer {
 	    return output;
 	}	
 }
-
-export class GlobalWriter extends Writer{
+interface IGlobalWriter {
 	type:Var;
 	_mutable:boolean;
 	_instruction:bytecode[];
+}
+export class GlobalWriter extends Writer implements IGlobalWriter{
 	constructor(type:Var,mutable:boolean,val:number){
 		super();
 		this.type=type;
@@ -112,10 +115,11 @@ export class GlobalWriter extends Writer{
 	    return out;
 	}
 }
-
-export class DataWriter extends Writer{
+interface IDataWriter {
 	_offset:bytecode[]; //
 	_data:bytecode[];
+}
+export class DataWriter extends Writer implements IDataWriter{
 	constructor(offset:number,data:bytecode[]){
 		super();
 		this.offset=offset;

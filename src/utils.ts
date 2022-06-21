@@ -40,4 +40,7 @@ export const eqFuncTypes = function(type_data) {
         return true;
     }
 }
-export const validExportName =str=> str.match(/^[$A-Z_][0-9A-Z_$]*$/i);
+export const validExportName=str=> str.match(/^[A-Z_][0-9A-Z_$]*$/i);
+export const validForthName=(n:string)=>!(!n 
+    || n.startsWith("_") || n.startsWith("=") || n.startsWith(":") || n.startsWith(";") 
+    || n.endsWith(")") || n.endsWith('"'));

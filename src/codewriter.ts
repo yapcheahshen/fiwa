@@ -2,12 +2,23 @@
 import {encInt,encUInt} from './utils.ts'
 import {Inst,Var,bytecode} from './constants.ts'
 import {Writer} from './writers.ts'
-export class CodeWriter extends Writer {
+const loadStoreInsts=`i32_load,i64_load,f32_load,f64_load,i32_load8_s,i32_load8_u,i32_load16_s,i32_load16_u,
+i64_load8_s,i64_load8_u,i64_load16_s,i64_load16_u,i64_load32_s,i64_load32_u,
+i32_store,i64_store,f32_store,f64_store,i32_store8,i32_store8,i32_store16,i64_store8,i64_store16,i64_store32`
+const getsetInsts=`get_local,set_local,tee_local,get_global,set_global`;
+const simpleInsts=`unreachable,nop,drop,select,else,end,ret,i32_eqz,i32_eq,i32_ne,
+i32_add,i32_sub,i32_mul,i32_div_s,i32_and,i32_or,i32_xor,i32_shr_s,i32_shr_u,i32_shl,
+i32_lt_s,i32_gt_s,i32_le_s,i32_ge_s`;
+interface ICodeWriter{
 	_localTypes: bytecode[];
 	_code: bytecode[];
 	name: string;
 	type: bytecode[];
-	_functionLinks : ({location: number, name:string})[ ];
+	_functionLinks : ({location: number, name:string})[ ];	
+	setName(name):void;
+	setType(type:bytecode[]);
+}
+export class CodeWriter extends Writer implements ICodeWriter{
 	constructor (local_types:bytecode[]) {
 		super();
 	    this._localTypes = local_types ? local_types : [];
@@ -15,6 +26,16 @@ export class CodeWriter extends Writer {
 	    this._functionLinks = [];
 		this.name='';
 		this.type=[];
+		this.addInst(loadStoreInsts,this.load_store);//(Inst[name]).bind(that) );
+		this.addInst(getsetInsts, this.get_set);
+		this.addInst(simpleInsts, this.simple);
+	}
+	write() {
+		const out=[];
+		out.push(...encUInt(this._localTypes.length));
+		this._localTypes.forEach(type=>out.push(1,type));
+		out.push(...this._code);
+		return [...encUInt(out.length), ...out];
 	}
 	setName(name:string){
 		this.name=name;
@@ -22,24 +43,27 @@ export class CodeWriter extends Writer {
 	setType(type:bytecode[]){
 		this.type=type;
 	}
-	write() { //need setName
-		const out=[];
-		out.push(...encUInt(this._localTypes.length));
-		this._localTypes.forEach(localtype=>out.push(1,localtype));
-		out.push(...this._code);
-		return [...encUInt(out.length), ...out];
+	private addInst(str:string, doer){
+		const insts=str.split(/[\r\n ]*,[\r\n ]*/).map(it=>it.trim());
+		for (let i=0;i<insts.length;i++){
+			const name=insts[i];
+			this[name] = doer(Inst[name],this._code);
+		}
 	}
-
-	unreachable(){this._code.push(Inst.unreachable)	}
-	nop()        {this._code.push(Inst.nop)	        }
+	private simple(inst:Inst,_code:bytecode[]) {
+		return function() {_code.push(inst)};
+	}
+	private get_set(inst:Inst,_code:bytecode[]) {
+		return function(i:number) {_code.push(inst,...encUInt(i))} 
+	}
+	private load_store(inst:Inst,_code:bytecode[]){
+		return function(offset:number,align:number) {_code.push(inst, ...encUInt(align||0),...encUInt(offset))}
+	}
 	block(r_t:Var)   {this._code.push(Inst.block,r_t||Var.i32)	}
 	loop(r_t:Var)    {this._code.push(Inst.loop,r_t||Var.i32)	}
 	if(r_t:Var)      {this._code.push(Inst.if,r_t||Var.i32)	}
-	else()              {this._code.push(Inst.else)	}
-	end()               {this._code.push(Inst.end)	}
 	br(depth:number)    {this._code.push(Inst.br,depth)	}
 	br_if(depth:number) {this._code.push(Inst.br_if,depth)	}
-	ret()               {this._code.push(Inst.return)	}
 	call(name:string|number) {
 		if (typeof name==='number') {
 			this._code.push(Inst.call,...encUInt(name));
@@ -48,54 +72,9 @@ export class CodeWriter extends Writer {
 			this._functionLinks.push({location: this._code.length, name});
 		}
 	}
-	drop() {this._code.push(Inst.drop)	}
-	select() {this._code.push(Inst.select)	}
-	get_local(i:number) {this._code.push(Inst.get_local, ...encUInt(i)) }
-	set_local(i:number) {this._code.push(Inst.set_local, ...encUInt(i)) }
-	tee_local(i:number) {this._code.push(Inst.tee_local, ...encUInt(i)) }
-	i32_load(offset:number,align:number) {this._code.push(Inst.i32_load, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load(offset:number,align:number) {this._code.push(Inst.i64_load, ...encUInt(align||0),...encUInt(offset)) }
-	f32_load(offset:number,align:number) {this._code.push(Inst.f32_load, ...encUInt(align||0),...encUInt(offset)) }
-	f64_load(offset:number,align:number) {this._code.push(Inst.f64_load, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load8_s(offset:number,align:number) {this._code.push(Inst.i32_load8_s, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load8_u(offset:number,align:number) {this._code.push(Inst.i32_load8_u, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load16_s(offset:number,align:number) {this._code.push(Inst.i32_load16_s, ...encUInt(align||0),...encUInt(offset)) }
-	i32_load16_u(offset:number,align:number) {this._code.push(Inst.i32_load16_u, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load8_s(offset:number,align:number) {this._code.push(Inst.i64_load8_s, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load8_u(offset:number,align:number) {this._code.push(Inst.i64_load8_u, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load16_s(offset:number,align:number) {this._code.push(Inst.i64_load16_s, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load16_u(offset:number,align:number) {this._code.push(Inst.i64_load16_u, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load32_s(offset:number,align:number) {this._code.push(Inst.i64_load32_s, ...encUInt(align||0),...encUInt(offset)) }
-	i64_load32_u(offset:number,align:number) {this._code.push(Inst.i64_load32_u, ...encUInt(align||0),...encUInt(offset)) }
-	i32_store(offset:number,align:number) {this._code.push(Inst.i32_store, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store(offset:number,align:number) {this._code.push(Inst.i64_store, ...encUInt(align||0),...encUInt(offset)) }
-	f32_store(offset:number,align:number) {this._code.push(Inst.f32_store, ...encUInt(align||0),...encUInt(offset)) }
-	f64_store(offset:number,align:number) {this._code.push(Inst.f64_store, ...encUInt(align||0),...encUInt(offset)) }
-	i32_store8(offset:number,align:number) {this._code.push(Inst.i32_store8, ...encUInt(align||0),...encUInt(offset)) }
-	i32_store16(offset:number,align:number) {this._code.push(Inst.i32_store16, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store8(offset:number,align:number) {this._code.push(Inst.i64_store8, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store16(offset:number,align:number) {this._code.push(Inst.i64_store16, ...encUInt(align||0),...encUInt(offset)) }
-	i64_store32(offset:number,align:number) {this._code.push(Inst.i64_store32, ...encUInt(align||0),...encUInt(offset)) }
 	memory_size() {this._code.push(Inst.memory_size,0)}
 	memory_grow() {this._code.push(Inst.memory_grow,0)}
 	// memory_init , memory_fill , memory_copy data_drop
 	i32_const(v:number) {this._code.push(Inst.i32_const,...encInt(v))}
 	i64_const(v:number) {this._code.push(Inst.i64_const,...encInt(v))}
-	i32_eqz() {this._code.push(Inst.i32_eqz)}
-	i32_eq()  {this._code.push(Inst.i32_eq)}
-	i32_ne()  {this._code.push(Inst.i32_ne)}
-	i32_add() {this._code.push(Inst.i32_add)}
-	i32_sub() {this._code.push(Inst.i32_sub)}
-	i32_mul() {this._code.push(Inst.i32_mul)}
-	i32_div_s(){this._code.push(Inst.i32_div_s)}
-	i32_and(){this._code.push(Inst.i32_and)}
-	i32_or(){this._code.push(Inst.i32_or)}
-	i32_xor(){this._code.push(Inst.i32_xor)}
-	i32_shr_s(){this._code.push(Inst.i32_shr_s)}
-	i32_shr_u(){this._code.push(Inst.i32_shr_u)}
-	i32_shl(){this._code.push(Inst.i32_shl)}
-	i32_lt_s(){this._code.push(Inst.i32_lt_s)}
-	i32_gt_s(){this._code.push(Inst.i32_gt_s)}
-	i32_le_s(){this._code.push(Inst.i32_le_s)}
-	i32_ge_s(){this._code.push(Inst.i32_ge_s)}
 }

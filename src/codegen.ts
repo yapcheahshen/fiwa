@@ -9,7 +9,7 @@ export {Var, ExternalKind,encUInt,encUIntString,sectionCode};
 import {CodeWriter} from './codewriter.ts';
 import {Writer,FunctionWriter,ImportWriter,TypeWriter,ExportWriter,GlobalWriter,DataWriter} from './writers.ts'
 export {TypeWriter,CodeWriter,FunctionWriter,ImportWriter,ExportWriter};
-export class ModuleWriter {
+interface IModuleWriter{
 	_types:bytecodes[];
 	_imports:ImportWriter[];
 	_functions:FunctionWriter[];
@@ -18,6 +18,8 @@ export class ModuleWriter {
 	_globals:GlobalWriter[];
 	_datum:DataWriter[];
 	_memory:bytecodes[];
+}
+export class ModuleWriter implements IModuleWriter {
 	constructor (opts:{memory:number}) {
 	    this._types     = [];
 	    this._imports   = [];
@@ -26,7 +28,7 @@ export class ModuleWriter {
 	    this._codes     = [];
 	    this._globals   = [];
 	    this._datum     = [];
-	    this._memory= [];//[ [1,1, opts.memory]]:[[0,1]]; //always use 64KB
+	    this._memory    = [];//[ [1,1, opts.memory]]:[[0,1]]; //always use 64KB
 	}
 	exportExtra(){
 		//export memory=2,global=3
@@ -36,7 +38,6 @@ export class ModuleWriter {
 	gen({datasize:number}) {
 		const output = [];
     	this.exportExtra();
- 
 	    this.resolveFunctionNames();
 	    const wasm_header = [0,97,115,109,1,0,0,0]; //.asm....
 	    output.push(...wasm_header);
@@ -133,9 +134,7 @@ export class ModuleWriter {
 	    funcNames.forEach(el=> {
 	        if (funcTypes.findIndex(eqFuncTypes(el.funcType)) === -1) funcTypes.push(el.funcType);
 	    });
-	    this._types.push( ... funcTypes );
-		// const that=this;
-	    // funcTypes.forEach(type=>that._types.push(type));
+	    this._types.push( ... funcTypes );  // funcTypes.forEach(type=>that._types.push(type));
 	    const _functions=this._functions;
 	    this._codes.forEach( ({type} )=>{
 	        if (type) {
@@ -173,9 +172,7 @@ export class ModuleWriter {
 	    this.clearSymbols(this._codes);
 	}
 }
-//helper constant
 export const one_one=(new TypeWriter([Var.i32],[Var.i32])).write(); //return one in one out signature
-//generic signature for javascript calls
 export const makeSignature=(count,result=1)=>{
 	return (new TypeWriter( Array(count).fill().map(()=>Var.i32),
 		                   Array(result).fill().map(()=>Var.i32))).write();

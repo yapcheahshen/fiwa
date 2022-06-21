@@ -1,5 +1,8 @@
 /* forth word and CodeWriter function mapping */
 
+export function doInst(){
+
+}
 export const Instructions={ 
 	"drop":"drop",
 	"nop" :"nop",
@@ -24,6 +27,5 @@ export const Instructions={
 	"@"   :"i32_load",
 	"c@"  :"i32_load8_u",
 	"i32_store"   :"i32_store",   
-	"i32_store8_u" :"i32_store8_u"  // addr value store 
-	// ! c! cannot be primitive , as stack order is different
+	"i32_store8_u" :"i32_store8_u",  // addr value store 
 }

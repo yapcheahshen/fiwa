@@ -8,25 +8,35 @@ Forth Inspired WebAssembler
 
 ## 目標
 - 讓 Forther 快速掌握 WebAssembly 的原理。
-- 讓 Forth 起到類似 wat 的功用，但更為簡潔，可以直接用來開發。(用 wat 寫相當痛苦)
-- 每隻程式控制在100行左右。
+- Minimum Metacompiling。
 
 ## 架構
-- CodeGen 以 TypeScript寫就，負責生成 WebAssembly 目的碼。(編成index.js)
-- Assembly 剖析 類Forth 代碼，轉WebAssebmly 語法。 (編成index.js)
-- index.html 設置環境，並載入 forth corewords及用戶代碼，每次互動都是重新編譯再執行。
+1. Assembler in Javascript
+- 利用前端強大的環境(DevTools)，以及無所不在的滲透力。
+- 每次修改Source code 都是重新編譯再執行，實現交談式開發。
+- 生成一個含有wasm 模組。
+
+2. 元編譯 MetaCompiling
+- 在Browser環境成功自我編譯。
+- 脫離Browser ，用 Wasm runtime (wasmer, wasmtime) 自我編譯。
+
+## Assembler 架構
+- 將輸入剖成token
+- token 第一字元決定類似，依序為 : ; localvar , global var , defined words, numeric literal
+- compile state 只有 inside 和 outside colon 的差別
 
 ## 開發與執行
 - 初階：打開 dist/index.html。只須略懂Forth ，不必懂 Javascript。
 - 中階：打開 DevTool，學習單步除錯，穿梭 V8 和 WebAssembly 世界，在DevTools 的源代碼看到 8 個hex 的檔名，就是編好的 ，WebAssemblyText，語法是LISP血統的 S 語言。
-- 高階：安裝 esbuild (推薦) ，執行 dev.cmd ，或 node run dev ，修改 TypeScript 。
+- 高階：修改Forth 程式，實作 Metacompiling。
 
 ## 與傳統Forth差異
-- 無直譯模式
+- 無直譯模式，
+- Object Code(Dictionary) 和 Data 分離，Data 區不能自由地放指令 (只能載入constant)
 - 將近似Forth 的代碼編譯成 原生目的碼(wasm)
 - 只是一個Assembler，沒有任何優化處理。
 - 需要優化請過一遍 Binaryen 等有能力處理 AST 的高級工具。
-- 使用 WebAssembly 原生虛擬機，只能部份操作Datastack，不能操作 Return Stack 和 Instruction Pointer。
+- 使用 WebAssembly 原生虛擬機，只能部份操作Datastack (有drop指令，但沒有swap, dup，over等，官方建議是用參數) ，不能操作 Return Stack 和 Instruction Pointer。
 
 ## folders
 src/      typescript 源代碼
