@@ -134,3 +134,8 @@ export class DataWriter extends Writer implements IDataWriter{
 	    return out;
 	}
 }
+export const one_one=(new TypeWriter([Var.i32],[Var.i32])).write(); //return one in one out signature
+export const makeSignature=(count,result=1)=>{
+    return (new TypeWriter( Array(count).fill().map(()=>Var.i32),
+                           Array(result).fill().map(()=>Var.i32))).write();
+}

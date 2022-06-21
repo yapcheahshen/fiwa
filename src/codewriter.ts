@@ -1,14 +1,17 @@
-/* 輸出WebAssembly 指令集*/
+/* 編寫 WebAssembly 指令*/
 import {encInt,encUInt} from './utils.ts'
 import {Inst,Var,bytecode} from './constants.ts'
 import {Writer} from './writers.ts'
-const loadStoreInsts=`i32_load,i64_load,f32_load,f64_load,i32_load8_s,i32_load8_u,i32_load16_s,i32_load16_u,
-i64_load8_s,i64_load8_u,i64_load16_s,i64_load16_u,i64_load32_s,i64_load32_u,
-i32_store,i64_store,f32_store,f64_store,i32_store8,i32_store8,i32_store16,i64_store8,i64_store16,i64_store32`
-const getsetInsts=`get_local,set_local,tee_local,get_global,set_global`;
+//簡單指令
 const simpleInsts=`unreachable,nop,drop,select,else,end,ret,i32_eqz,i32_eq,i32_ne,
 i32_add,i32_sub,i32_mul,i32_div_s,i32_and,i32_or,i32_xor,i32_shr_s,i32_shr_u,i32_shl,
 i32_lt_s,i32_gt_s,i32_le_s,i32_ge_s`;
+//記憶體操作
+const loadStoreInsts=`i32_load,i64_load,f32_load,f64_load,i32_load8_s,i32_load8_u,i32_load16_s,i32_load16_u,
+i64_load8_s,i64_load8_u,i64_load16_s,i64_load16_u,i64_load32_s,i64_load32_u,
+i32_store,i64_store,f32_store,f64_store,i32_store8,i32_store8,i32_store16,i64_store8,i64_store16,i64_store32`
+//變數取值賦值
+const getsetInsts=`get_local,set_local,tee_local,get_global,set_global`; 
 interface ICodeWriter{
 	_localTypes: bytecode[];
 	_code: bytecode[];
@@ -43,7 +46,7 @@ export class CodeWriter extends Writer implements ICodeWriter{
 	setType(type:bytecode[]){
 		this.type=type;
 	}
-	private addInst(str:string, doer){
+	private addInst(str:string, doer) { //創建填入bytecode的成員函式
 		const insts=str.split(/[\r\n ]*,[\r\n ]*/).map(it=>it.trim());
 		for (let i=0;i<insts.length;i++){
 			const name=insts[i];
@@ -59,6 +62,7 @@ export class CodeWriter extends Writer implements ICodeWriter{
 	private load_store(inst:Inst,_code:bytecode[]){
 		return function(offset:number,align:number) {_code.push(inst, ...encUInt(align||0),...encUInt(offset))}
 	}
+	//以下指令重覆性較少，為易讀故不用 addInst 創建，原則上按官方順序排列
 	block(r_t:Var)   {this._code.push(Inst.block,r_t||Var.i32)	}
 	loop(r_t:Var)    {this._code.push(Inst.loop,r_t||Var.i32)	}
 	if(r_t:Var)      {this._code.push(Inst.if,r_t||Var.i32)	}

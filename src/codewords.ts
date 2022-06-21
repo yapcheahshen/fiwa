@@ -3,7 +3,7 @@
 export function doInst(){
 
 }
-export const Instructions={ 
+export const CodeWords={ 
 	"drop":"drop",
 	"nop" :"nop",
 	"if"  :"if",

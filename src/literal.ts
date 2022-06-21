@@ -1,4 +1,5 @@
-export function  doLit(tk:string): void {
+import {CodeWords} from './codewords.ts';
+export function  doLit(tk:string): void { //這是最後一步了
   	if (tk[0]=='"') { //a string literal, 
   		let s=tk.slice(1);
   		if (s[s.length-1]=='"') s=s.slice(0,s.length-1);
@@ -11,7 +12,11 @@ export function  doLit(tk:string): void {
     	this.colonWriter.i32_const(parseInt(tk, 16));
     } else {
     	if (tk !== "_start") { //因為 js 會自動進入 _start ，不能重覆叫它
-        	this.colonWriter.call(tk); //token作為函式名，在codegen::resolveFunctionNames 會回填位址
+    		if (CodeWords[tk]) {
+    			this.colonWriter[CodeWords[tk]].call(this.colonWriter);
+    		} else if (tk) {
+        		this.colonWriter.call(tk); //token作為函式名，在codegen::resolveFunctionNames 會回填位址    			
+    		}
       	} else {
             throw "cannot call _start in forth program";
         }

@@ -9,10 +9,10 @@
 // 7 = $A  定義並直接賦值，這是一個常數
 // $B     只定義的話，就是一個變數，清零
 
-import {Instructions} from './instructions.ts'
+import {CodeWords} from './codewords.ts'
 export function doVar(tk:string): boolean {
-    let assignment = false ,additive=false;tee=false;
-    if (!Instructions[tk] && tk[0] === '=') { //變數賦值
+    let assignment = false ,additive=false, tee=false;
+    if (!CodeWords[tk] && tk[0] === '=') { //變數賦值
       assignment = true;
       tk = tk.slice(1);
       if (tk[0]==='+') {
@@ -29,14 +29,14 @@ export function doVar(tk:string): boolean {
     if (tk[0]=='$' && parseInt(tk.slice(1)).toString()==tk.slice(1)) {
     	paramIndex=parseInt(tk.slice(1));
     } else {
-	    paramIndex=this.defining().params.indexOf(tk);
-	    if (paramIndex==-1) localIndex=this.defining().locals.indexOf(tk);
+	    paramIndex=this.compiling().params.indexOf(tk);
+	    if (paramIndex==-1) localIndex=this.compiling().locals.indexOf(tk);
     }
 
     if (~paramIndex || ~localIndex) { //是參數或區域變數？
       let idx = paramIndex;
       if (~localIndex) {
-        idx = this.defining().params.length + localIndex; //local vars 的index要加上 params count
+        idx = this.compiling().params.length + localIndex; //local vars 的index要加上 params count
       }
       if (assignment) { //變數賦值, tee 是wasm 特有的，可省很多 dup
       	if(plus) {
@@ -47,9 +47,11 @@ export function doVar(tk:string): boolean {
       } else {
         this.colonWriter.get_local(idx);
       }
+    	console.log('var',this.compiling(),localIndex)
+
       return true;
     }
-    return false;
+    return false; //未處理
   }
 export function doGlobal(){
 

@@ -1,8 +1,10 @@
-﻿import { ModuleWriter, CodeWriter,  makeSignature } from "./codegen.ts";
+﻿import { ModuleWriter } from "./modwriter.ts";
+import { CodeWriter} from './codewriter.ts';
 import { ColonContext, doColon , doSemiColon } from "./colon.ts";
 import { doGlobal, doVar } from "./variable.ts";
 import { doLit } from "./literal.ts";
-import {START} from "./constants.ts"
+import { START } from "./constants.ts"
+import { makeSignature} from "./writers.ts"
 interface FiwaAssembler { 
   opts :{};
   moduleWriter : ModuleWriter;
@@ -35,17 +37,43 @@ export default class Assembler implements FiwaAssembler {
     this.here= 0 ;
     this.prolog();
   }
-  protected nextToken(peek=false):string {//codePointAt 能正確讀一個 UTF32 字元
-    let token="", ntib=this.ntib;
+  private bestMatch(str){ //匹配最長的字
+    let best='';
+    const chi= str.codePointAt(0)>0x3400;
+    if (chi) {
+      for (let w in this.words) {
+        if (str.startsWith(w)) {
+           if (w.length>best) best=w;
+        }
+      }
+      return best?best.length:1;      
+    } else {
+      let i=1;
+      while (i<str.length) {
+        if (str.codePointAt(i)<0x7f && str.charAt(i)!==';') i++;
+        else break;
+      }
+      return i;
+    }
+  }
+  protected nextToken(peek=false, autobreak=false):string {//codePointAt 能正確讀一個 UTF32 字元
+    let rawtoken="", ntib=this.ntib;
     const tib=this.tib;
     while (tib.codePointAt(ntib)<=0x20) ntib++; //skip blank characters
     while (ntib<tib.length && tib.codePointAt(ntib)>0x20 ) {
-      token+=String.fromCodePoint(tib.codePointAt(ntib++));
+      if (tib.charAt(ntib)==';' && rawtoken.length) break // ; 必須在開頭
+      rawtoken+=String.fromCodePoint(tib.codePointAt(ntib++));
+    }
+    let token=rawtoken;
+    if (autobreak) { //chinese tokens, break into small units
+      const n=this.bestMatch(rawtoken);
+      token=rawtoken.slice(0,n);
+      ntib -= (rawtoken.length-n);
     }
     if (!peek) this.ntib=ntib;
     return token;
   }
-  private skipComment(tk):void { //manipulate tib is not a good practice but much easier
+  private skipComment(tk):void {
     let ntib=this.ntib;
     const tib=this.tib;
     if (tk[0]=='\\') {
@@ -57,9 +85,9 @@ export default class Assembler implements FiwaAssembler {
     this.ntib=ntib;
   }
   private prolog(){
-    const signature = makeSignature(2,0) ;
+    const signature = makeSignature(3,1) ; //_start 可以傳入3個參數。一個返回值
     this.word=START;
-    this.words[START]={name:START, params:['$0','$1'], locals:['i','j','k'] , signature};
+    this.words[START]={name:START, params:['$0','$1','$2'], locals:['i','j','k'] , signature};
   }
   private epilog(){
     if (this.word!==START) doSemiColon.call(this);//強制結束
@@ -76,15 +104,15 @@ export default class Assembler implements FiwaAssembler {
     this.tib=buf;
     this.ntib=0;
   }
-  assemble(buf: string):void {
+  scan(buf: string):void {
     this.setTib(buf);
     while (this.ntib<this.tib.length) {
-      const tk=this.nextToken();
+      const tk=this.nextToken(false,true);
+      this.opts.callbacks?.token&&this.opts.callbacks.token(tk);
       if (tk[0]==='('||tk[0]==='\\')  this.skipComment(tk);
       else if (tk[0] === ':')         doColon.call(this,tk);
-      else if (tk[0] === ';')         doSemiColon.call(this,tk);
-      // else if (tk[0] === '$')         doGlobal.call(this,tk);
-      // else doVar.call(this,tk) ||     doLit.call(this,tk)
+      else if (tk[0]===';')         doSemiColon.call(this,tk);
+      else doVar.call(this,tk) ||     doLit.call(this,tk)
     }
   }
   getContext():Map{
@@ -94,12 +122,10 @@ export default class Assembler implements FiwaAssembler {
     if (this.opts._mem) {
       this.moduleWriter.importMemory('_mem','env');
     }
-    /*
     for (let name in this.imports) {
       const signature=makeSignature(...this.imports[name]);//make a signature  
-      this.moduleWriter.importFunction(name, signature, 'env', name); 
+      this.moduleWriter.importFunction(name, signature, 'js', name); 
     } 
-    */   
     this.epilog(); //epilog 之後再叫 assemble 會出錯，讓 codeGen 報錯，Assembler 不檢查。
     return this.moduleWriter.gen({datasize:this.here , ...this.opts});
   }

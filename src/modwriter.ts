@@ -1,14 +1,9 @@
-﻿//從 https://github.com/btzy/wasm-codegen 翻譯過來， 
-//負責生成 WebAssembly bytecode (.wasm 檔的內容) 
-//wasm-codegen實作不完整，又比較囉嗦。
-//也沒有充份利用Javascript 的特性。
-//產生bytecode全程都用 Javascript Array ，會自動長大，最後一次性轉為 Uint8Array 。
+﻿//負責生成 WebAssembly bytecode (.wasm 檔的內容) 
+//最初由 https://github.com/btzy/wasm-codegen 翻譯過來，原來實作不完整，也比較囉嗦。
+import {CodeWriter} from './codewriter.ts'; //這是最複雜的 Writer，其他Writer集中一處
+import {Writer,FunctionWriter,ImportWriter,TypeWriter,ExportWriter,GlobalWriter,DataWriter} from './writers.ts'
 import {Var,ExternalKind,sectionCode,Inst,bytecodes,bytecode} from './constants.ts'
 import {encInt,encUInt,encUIntString,eqFuncTypes,validExportName} from './utils.ts'
-export {Var, ExternalKind,encUInt,encUIntString,sectionCode};
-import {CodeWriter} from './codewriter.ts';
-import {Writer,FunctionWriter,ImportWriter,TypeWriter,ExportWriter,GlobalWriter,DataWriter} from './writers.ts'
-export {TypeWriter,CodeWriter,FunctionWriter,ImportWriter,ExportWriter};
 interface IModuleWriter{
 	_types:bytecodes[];
 	_imports:ImportWriter[];
@@ -18,6 +13,7 @@ interface IModuleWriter{
 	_globals:GlobalWriter[];
 	_datum:DataWriter[];
 	_memory:bytecodes[];
+	done:boolean;
 }
 export class ModuleWriter implements IModuleWriter {
 	constructor (opts:{memory:number}) {
@@ -29,6 +25,7 @@ export class ModuleWriter implements IModuleWriter {
 	    this._globals   = [];
 	    this._datum     = [];
 	    this._memory    = [];//[ [1,1, opts.memory]]:[[0,1]]; //always use 64KB
+	    this.done=false;
 	}
 	exportExtra(){
 		//export memory=2,global=3
@@ -36,7 +33,8 @@ export class ModuleWriter implements IModuleWriter {
     	//this._exports.push(exportWriter);
     }
 	gen({datasize:number}) {
-		const output = [];
+		if (this.done) throw "module closed"
+		const output = [];//只能產生一次
     	this.exportExtra();
 	    this.resolveFunctionNames();
 	    const wasm_header = [0,97,115,109,1,0,0,0]; //.asm....
@@ -49,6 +47,7 @@ export class ModuleWriter implements IModuleWriter {
 	    this.writeSection(output,sectionCode.CODE,this._codes );
 	    this.writeSection(output,sectionCode.GLOBAL,this._globals );
 	    this.writeSection(output,sectionCode.DATA,this._datum );
+	    this.done=true;
 	    return new Uint8Array(output);
 	}
 	exportFunction (name:string, exportname:string) { // name
@@ -108,12 +107,6 @@ export class ModuleWriter implements IModuleWriter {
 		});
         output.splice(sizeloc, 0,...encUInt(output.length - sizeloc));
 	}
-	private clearSymbols( symbols: ({name:string,type:bytecode[]})[]){
-		symbols.forEach(obj=> {
-	        if (obj.name) obj.name = '';
-	        if (obj.type) obj.type = [];
-	    })
-	}
 	private resolveFunctionNames(){
 		const funcTypes : bytecodes[] = [];
 	    const funcTypesOffset = this._types.length;
@@ -167,13 +160,5 @@ export class ModuleWriter implements IModuleWriter {
 	            obj._index = funcIndex;
 	        }
 	    })
-	    this.clearSymbols(this._exports);
-	    this.clearSymbols(this._imports);
-	    this.clearSymbols(this._codes);
 	}
-}
-export const one_one=(new TypeWriter([Var.i32],[Var.i32])).write(); //return one in one out signature
-export const makeSignature=(count,result=1)=>{
-	return (new TypeWriter( Array(count).fill().map(()=>Var.i32),
-		                   Array(result).fill().map(()=>Var.i32))).write();
 }

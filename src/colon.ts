@@ -1,6 +1,6 @@
 import {parseParenthesis } from "./parser.ts";
 import {validForthName} from "./utils.ts";
-import {CodeWriter} from "./codegen.ts"
+import {CodeWriter} from "./codewriter.ts"
 import {START,bytecode,Var} from "./constants.ts";
 import {TypeWriter} from "./writers.ts";
 import {parseSignature,makeType} from "./signature.ts"
@@ -16,6 +16,7 @@ export function doColon(tk:string=''):void{
   
   let params:string[]=[],locals:string[]=[];
   const paren=this.nextToken(true);
+  let resultsType=[];
   if (paren[0] === "(") { //最好要定義清楚，預設是( 0 -- 0 )
     this.nextToken();
     [params,locals,resultsType]=parseSignature.call(this,paren) ;
