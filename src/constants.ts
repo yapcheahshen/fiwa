@@ -16,9 +16,17 @@ export enum Inst {
     i32_add=106,i32_sub=107,i32_mul=108,i32_div_s=109,
     i32_and = 0x71,i32_or=0x72,i32_xor=0x73,i32_shl=0x74,i32_shr_s=0x75,i32_shr_u=0x76,i32_rotl=0x77,i32_rotr=0x78,
     f32_abs=0x8b,f32_neg=0x8c,f32_ceil=0x8d,f32_floor=0x8e,f32_trunc=0x8f,f32_nearest=0x90,f32_sqrt=0x91,
-
+    f32_add=0x92,f32_sub=0x93,f32_mul=0x94,f32_div=0x95,f32_min=0x96,f32_max=0x97,f32_copysign=0x98,
+    f64_abs=0x99,f64_neg=0x9a,f64_ceil=0x9b,f64_floor=0x9c,f64_trunc=0x9d,f64_nearest=0x9e,f64_sqrt=0x9f,
+    f64_add=0xa0,f64_sub=0xa1,f64_mul=0xa2,f64_div=0xa3,f64_min=0xa4,f64_max=0xa5,f64_copysign=0xa6,
+    i32_wrap_i64=0xa7,i32_trunc_f32_s=0xa8,
 }
 export enum sectionCode {TYPE=1,IMPORT=2,FUNCTION=3,TABLE=4,MEMORY=5,GLOBAL=6,EXPORT=7,START=8,ELEMENT=9,CODE=10,DATA=11}
 export type bytecode=number;
 export type bytecodes=bytecode[];
 export const START='_start';
+
+export const InstNames=[];
+for (let n in Inst){
+    InstNames[ Inst[n] ] =n;
+}

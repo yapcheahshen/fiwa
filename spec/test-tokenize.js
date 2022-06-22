@@ -16,11 +16,10 @@ export const test_tokenize=async ({Var,Assembler,Tokenizer},tests,pass)=>{
 		pass++;
 	}
 	try {
-		test('a bb ccc',['a','bb','ccc'],handlers );
-		test(`甲乙 甲乙丙丁`,	['甲乙','甲乙','丙丁'],handlers ); 
-		test(`甲乙 丙丁甲甲乙乙`,['甲乙','丙丁甲','甲乙','乙'],handlers );//
-		test(`天a乙丙1甲乙丙丁3乙`,['天','a','乙丙','1','甲','乙丙','丁','3','乙'],handlers );
-
+		test('a bb ccc',['a',' ','bb',' ','ccc'],handlers );
+		test(`甲乙 甲乙丙丁`,	['甲乙',' ','甲乙','丙丁'],handlers ); 
+		test(`甲乙 丙丁甲甲乙乙`,['甲乙',' ','丙丁甲','甲乙','乙'],handlers );//
+		test(`天a乙丙1 甲乙丙丁3乙`,['天','a','乙丙','1',' ','甲','乙丙','丁','3','乙'],handlers );
 	} catch(e) {
 		console.error(e);
 	}

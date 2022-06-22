@@ -37,7 +37,7 @@ export class Tokenizer {
   end():boolean{
   	return ntib>=tib;
   }
-  skip():void {
+  skipComment():void {
     let ntib=this.ntib;
     const tib=this.tib;
     if (tib[ntib]=='\\') {
@@ -45,7 +45,7 @@ export class Tokenizer {
       return this.next();
     } else if (tib[ntib]=='(') {
       while ( ntib <tib.length && tib.charAt(ntib)!==')') ntib++;
-      ntib++; //skip )
+      ntib++; 
       return this.next();
     } else return ;
     // console.log('comment',tib.slice(this.ntib,ntib));
@@ -119,14 +119,18 @@ export class Tokenizer {
   	const out:[]=[];
   	const defaultHandler=handlers[''];
     while (this.ntib<this.tib.length) {
+      let blankstart=this.ntib;
       this.skipBlank();
+      if (this.ntib>blankstart) {
+      	 defaultHandler&&defaultHandler(this.tib.slice(blankstart,this.ntib),blankstart,this.ntib);
+      }
       let start=this.ntib;
-      this.next(false);
-      this.skip();
+      this.next();
+      this.skipComment();
       const handler=handlers[this.tib[this.ntib]];//use first character as selector
       const tk=this.tib.slice(start,this.ntib);
-      if (handler&& handler(tk)) continue;
-	  defaultHandler&&defaultHandler(tk);
+      if (handler&& handler(tk,start,this.ntib)) continue;
+	  defaultHandler&&defaultHandler(tk,start,this.ntib);
 	  this.lexicon.push([start,this.ntib]);
     }
   }
