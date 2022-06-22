@@ -7,8 +7,8 @@ export class Fiwa {
 		this.sources=sources||[];
 		if (typeof this.sources=='string') this.sources=[this.sources]; //可以提供多個
 		this.assembler=null;
-		this.onError=onError;
-		this.onLog=onLog;
+		this.onError=onError||console.error;
+		this.onLog=onLog||console.log;
 		this.callbacks=callbacks||{};
 		this._mem = new WebAssembly.Memory({initial:1}); //從64KB 開始
 		this.imports={	env:{_mem:this._mem }, js:bindSys(this) };

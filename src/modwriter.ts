@@ -28,9 +28,9 @@ export class ModuleWriter implements IModuleWriter {
 	    this.done=false;
 	}
 	exportExtra(){
-		//export memory=2,global=3
-		//const exportWriter = new ExportWriter("_mem", ExternalKind.memory); //only one memory area 
-    	//this._exports.push(exportWriter);
+		// export memory=2,global=3
+		// const exportWriter = new ExportWriter("_mem", ExternalKind.memory); //only one memory area 
+    	// this._exports.push(exportWriter);
     }
 	gen({datasize:number}) {
 		if (this.done) throw "module closed"
@@ -55,6 +55,7 @@ export class ModuleWriter implements IModuleWriter {
     	if (!validExportName(exportname)) throw "invalid export name "+exportname; 
     	const exportWriter = new ExportWriter(exportname, ExternalKind.function);
     	exportWriter.setName(name);
+    	console.log('export',name,exportname)
     	this._exports.push(exportWriter);
     }
     addData (offset:number, data:bytecode[] ):number {

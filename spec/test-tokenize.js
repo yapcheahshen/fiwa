@@ -1,36 +1,28 @@
-import assert from "assert";
-/*
-\\			: 加總 ( 2 -- 1 ) + ;
-\\			: 乘 ( 2 -- 1 ) * ;
-\\			: 年 ( 1 -- 1 ) 365 * ;
-\\			: 地 (  -- 1 ) 20 ;	
-
+/*與語義無關的切分模組，不斷學會新詞，並做為之後斷詞的參考，
+最簡單的長詞優先算法，有歧義的情況，人工補空白。
+中文詞必須連續，並且不含任何的標點符號。
 */
-export const test_tokenize=async ({Fiwa},tests,pass)=>{
-	const onLog=msg=>console.log(msg);
-	const onError=err=>console.log(err);
-	const test=async (src,val)=>{
-		tests++;
-		const tokenCB=tk=>{
-			// if (isNaN(parseInt(tk))&&tk.codePointAt(0)>0x100) console.log('tk',tk)
-		}
-		const fiwa=new Fiwa({onError,onLog,callbacks:{token:tokenCB}}); 
-		const r=await fiwa.execute(src);
-		assert.equal(r,val);
+import assert from "assert";
+export const test_tokenize=async ({Var,Assembler,Tokenizer},tests,pass)=>{
+	const tokenizer=new Tokenizer();
+	const tokens=[];
+
+	const handlers={"": (tk)=>tokens.push(tk) } ;
+	const test=(str, out, handlers,message)=>{
+		tokens.length=0;
+		tokenizer.run(str,handlers);
+		tests++
+		assert.deepEqual(tokens,out,message);
 		pass++;
 	}
-	try{
-		await test(`
-			:你 ( -- 1) 3;you   \\ ; 只能出現在一個字的開頭，所以 3和 ;會被分開
-   			:還好 ( 2 -- 1 ) + ;
-			:嗎;
-			:年了 ( 1 -- 1 ) 365 * ; 10年了你還好嗎 
-			`
-			, 3653);
-		// await test('3 10 *',30);
+	try {
+		test('a bb ccc',['a','bb','ccc'],handlers );
+		test(`甲乙 甲乙丙丁`,	['甲乙','甲乙','丙丁'],handlers ); 
+		test(`甲乙 丙丁甲甲乙乙`,['甲乙','丙丁甲','甲乙','乙'],handlers );//
+		test(`天a乙丙1甲乙丙丁3乙`,['天','a','乙丙','1','甲','乙丙','丁','3','乙'],handlers );
+
 	} catch(e) {
-		console.error(e)
+		console.error(e);
 	}
-	
 	return [tests,pass]
 }

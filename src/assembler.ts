@@ -5,6 +5,7 @@ import { doGlobal, doVar } from "./variable.ts";
 import { doLit } from "./literal.ts";
 import { START } from "./constants.ts"
 import { makeSignature} from "./writers.ts"
+import { Tokenizer ,TokenBreaker} from "./tokenizer.ts"
 interface FiwaAssembler { 
   opts :{};
   moduleWriter : ModuleWriter;
@@ -15,10 +16,9 @@ interface FiwaAssembler {
   globals:Map<string,boolean>;     //global variables
   words  :Map<string, WordContext>;//defined and defining words
   word:string;                     //the word being compiled, empty if in main
-  private tib:string;              //terminal input buffer
-  private ntib:number;             //tib pointer
   here:number;                     //memory pointer
   assemble(buf: string):void;
+  breaker:TokenBreaker;
   getContext():Map;
   genByteCode():void;
 }
@@ -32,12 +32,10 @@ export default class Assembler implements FiwaAssembler {
     this.startWriter = new CodeWriter([]);  //如果不在 : ; 之內，則編入 _start
     this.colonWriter = this.startWriter;    //一開始就是編入_start ，一進入 : colonWriter 改為正在編的字，; 後就切回 _start
     this.moduleWriter = new ModuleWriter(); //{ memory: opts.memory || 1 }外部配置memory*64KB ，0或都表示至少配64KB    
-    this.tib='';
-    this.ntib=0;
     this.here= 0 ;
     this.prolog();
   }
-  private bestMatch(str){ //匹配最長的字
+  private breaker(str):number{ //匹配最長的字
     let best='';
     const chi= str.codePointAt(0)>0x3400;
     if (chi) {
@@ -56,34 +54,6 @@ export default class Assembler implements FiwaAssembler {
       return i;
     }
   }
-  protected nextToken(peek=false, autobreak=false):string {//codePointAt 能正確讀一個 UTF32 字元
-    let rawtoken="", ntib=this.ntib;
-    const tib=this.tib;
-    while (tib.codePointAt(ntib)<=0x20) ntib++; //skip blank characters
-    while (ntib<tib.length && tib.codePointAt(ntib)>0x20 ) {
-      if (tib.charAt(ntib)==';' && rawtoken.length) break // ; 必須在開頭
-      rawtoken+=String.fromCodePoint(tib.codePointAt(ntib++));
-    }
-    let token=rawtoken;
-    if (autobreak) { //chinese tokens, break into small units
-      const n=this.bestMatch(rawtoken);
-      token=rawtoken.slice(0,n);
-      ntib -= (rawtoken.length-n);
-    }
-    if (!peek) this.ntib=ntib;
-    return token;
-  }
-  private skipComment(tk):void {
-    let ntib=this.ntib;
-    const tib=this.tib;
-    if (tk[0]=='\\') {
-      while ( ntib <tib.length && tib.codePointAt(ntib)>=0x20) ntib++;
-    } else if (tk[0]=='(') {
-      while ( ntib <tib.length && tib.charAt(ntib)!==')') ntib++;
-      ntib++; //skip )
-    } // console.log('comment',tib.slice(this.ntib,ntib));
-    this.ntib=ntib;
-  }
   private prolog(){
     const signature = makeSignature(3,1) ; //_start 可以傳入3個參數。一個返回值
     this.word=START;
@@ -100,17 +70,13 @@ export default class Assembler implements FiwaAssembler {
   compiling():WordContext{
     return this.words[this.word];
   }
-  setTib(buf:string):void{
-    this.tib=buf;
-    this.ntib=0;
-  }
   scan(buf: string):void {
-    this.setTib(buf);
-    while (this.ntib<this.tib.length) {
-      const tk=this.nextToken(false,true);
+    const tokenizer=new Tokenizer(buf);
+    while (!tokenizer.end()) {
+      let tk=tokenizer.next(false,this.breaker.bind(this));
       this.opts.callbacks?.token&&this.opts.callbacks.token(tk);
-      if (tk[0]==='('||tk[0]==='\\')  this.skipComment(tk);
-      else if (tk[0] === ':')         doColon.call(this,tk);
+      tk=tokenizer.skip(tk);
+      if (tk[0] === ':')         doColon.call(this,tk);
       else if (tk[0]===';')         doSemiColon.call(this,tk);
       else doVar.call(this,tk) ||     doLit.call(this,tk)
     }

@@ -42,9 +42,7 @@ export function doSemiColon(tk:string=''):void{
   this.colonWriter.end();
   const {name,signature}=this.compiling();
   this.moduleWriter.addFunction( name,signature, this.colonWriter);
-  if (exportname) {
-    this.moduleWriter.exportFunction(this.colonName, exportname);
-  }
+  exportname && this.moduleWriter.exportFunction(name, exportname);
   this.word=START;
   this.colonWriter = this.startWriter;
 }

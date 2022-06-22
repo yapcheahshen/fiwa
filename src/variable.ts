@@ -47,8 +47,6 @@ export function doVar(tk:string): boolean {
       } else {
         this.colonWriter.get_local(idx);
       }
-    	console.log('var',this.compiling(),localIndex)
-
       return true;
     }
     return false; //未處理
