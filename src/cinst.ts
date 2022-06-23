@@ -67,10 +67,10 @@
 //  絘 next
 //駖集  䋂  爼
 export const CInstNames={
-unreachable:"䌝", nop:"𦁈",block:"綑",loop:"絗", if:"？", else:"！",end:"。",
-br:"𥾣", br_if:"𢺽", br_table:"𥸳", return:"返",
+unreachable:"◆", nop:"◇",block:"□",loop:"◎", if:"？", else:"！",end:"。",
+br:"↗", br_if:"♂", br_table:"↘", return:"↖",
 //1_
-call:"Ⓐ", call_indirect:"𥹙", drop:"𥹓", select:"䊁",
+call:"Ⓐ", call_indirect:"㍘", drop:"𥹓", select:"䊁",
 get_local :"⑴",set_local:"①",tee_local:"⓵", get_global:"⒜", set_global:"ⓐ",
 //2_
 i32_load:    "入",   i64_load:    "籴" ,f32_load:      "鳰",       f64_load:"糴",

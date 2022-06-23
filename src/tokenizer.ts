@@ -1,6 +1,12 @@
+import {execMacro,parseMacro,macroReplace} from './macro.ts'
+import {charType,CharType} from './token.ts'
 export interface TTokenier {
 	tib:string;
-	ntib:number;
+	ptib,ntib:number;
+  macroReturn:number; //return to this ntib after macro finish
+  macroEnd   :number ; //run until here
+  macroForward:string[];
+  macroBackward:string[];
 	lexicon: [number,number][];
 	next():string;
 	reset(tib):void;
@@ -9,22 +15,7 @@ export interface TTokenier {
 export type TokenHandler={
 	 (tk: string): boolean;
 }
-export type CountedString=[addr:number,cnt:number];
-export enum CharType {
-	blank=0;
-	ascii=1;
-	chinese=2;
-	chinesepunc=3;
-	unknown=4;
-}
-const charType:CharType=cp=>{
-	if (cp<=0x20) return CharType.blank;
-	if (cp<0x2000) {
-		return CharType.ascii;
-	} else if ((cp>=0x3400&&cp<=0x9fff) || (cp>=0xd800&&cp<=0xdcff )||(cp>=0xe000&&cp<=0xf9ff )) {
-		return CharType.chinese;
-	} else return CharType.blank;
-}
+export type CountedString=[addr:number,cnt:number, type:number];
 export class Tokenizer {
   constructor (tib=''){
   	this.reset(tib);
@@ -33,9 +24,13 @@ export class Tokenizer {
     this.tib=buf;
     this.ntib=0;
     this.lexicon=[];
+    this.macroBackward=[];
   }
   end():boolean{
   	return ntib>=tib;
+  }
+  addMacro(name,def){
+    addMacro.call(this,name,def);
   }
   skipComment():void {
     let ntib=this.ntib;
@@ -44,9 +39,14 @@ export class Tokenizer {
       while ( ntib <tib.length && tib.codePointAt(ntib)>=0x20) ntib++;
       return this.next();
     } else if (tib[ntib]=='(') {
-      while ( ntib <tib.length && tib.charAt(ntib)!==')') ntib++;
-      ntib++; 
-      return this.next();
+      if (tib[ntib+1]=='#') {
+        ntib=parseMacro.call(this);
+      } else {
+        while ( ntib <tib.length && tib.charAt(ntib)!==')') ntib++;
+        ntib++; 
+      }
+      this.ntib=ntib;
+      return ;
     } else return ;
     // console.log('comment',tib.slice(this.ntib,ntib));
     this.ntib=ntib;
@@ -56,22 +56,39 @@ export class Tokenizer {
   	while (this.tib.codePointAt(ntib)<=0x20) ntib++; //skip blank characters
   	this.ntib=ntib;
   }
-  firstMatch(_from,_to):number{ //找第一個符合的
-	const tofind=this.tib.slice(_from,_to);
-  	for (let i=this.lexicon.length-1;i>=0;i--) {
-  		const [from,to]=this.lexicon[i];
-  		if (tofind.startsWith(this.tib.slice(from,to))) {
+  findMacro(name) {
+    for (let i=this.lexicon.length-1;i>=0;i--) {
+      const [from,to,macro]=this.lexicon[i];
+      if (!macro) continue;
+      if (this.tib.slice(from,to)===name) {
+        return [to+1,macro];
+      }
+    }
+  }
+  firstMatch(_from:number,_to:number,tib:string, lexicon:CountedString[]):number{ //找第一個符合的
+    tib=tib||this.tib;
+    lexicon=lexicon||this.lexicon
+	  const tofind=tib.slice(_from,_to);
+  	for (let i=lexicon.length-1;i>=0;i--) {
+  		const [from,to]=lexicon[i];
+  		if (tofind.startsWith(tib.slice(from,to))) {
 			return to-from;
   		}
   	}
   	return 0;
   }
-  bestMatch(_from,_to):number {//找最長符合的
+  getLexicon() {
+    return this.lexicon.map(([from,to,macro])=>
+      [this.tib.slice(from,to), macro?this.tib.slice(to+1,macro):'' ]);
+  }
+  bestMatch(_from:number,_to:number,tib:string, lexicon:CountedString[]):number {//找最長符合的
   	let bestlen=0;//this is slow ... speed up later
-	const tofind=this.tib.slice(_from,_to);
-  	for (let i=this.lexicon.length-1;i>=0;i--) {
-  		const [from,to]=this.lexicon[i];
-  		if (tofind.startsWith(this.tib.slice(from,to))) {
+    tib=tib||this.tib;
+    lexicon=lexicon||this.lexicon;
+    const tofind=tib.slice(_from,_to);
+  	for (let i=lexicon.length-1;i>=0;i--) {
+  		const [from,to]=lexicon[i];
+  		if (tofind.startsWith(tib.slice(from,to))) {
   			if (to-from>bestlen) {
   				bestlen=to-from;
   			}
@@ -79,13 +96,25 @@ export class Tokenizer {
   	}
   	return bestlen;
   }
+  newLexeme(from,to,macro=0) {
+    const tk=this.tib.slice(from,to);
+    if (parseInt(tk).toString()==tk) return ;
+    if (tk.slice(0,2)=='0x' && !isNaN(parseInt(tk.slice(2),16))) {
+      return;
+    } 
+    if (tk[0]!=='(') this.lexicon.push([from,to,macro]);
+  }
   breakat(_from,_to):number{
   	const bestlen=this.bestMatch(_from,_to); //開頭最長符號
   	if (bestlen) return bestlen;
-  	for (let i=_from+1;i<_to;i++) {
-  		const at=this.firstMatch(i,_to); //最接近符合的
-  		if (at>0) return i-_from;
+  	for (let i=_from+1;i<_to;i++) { //break by first matching word
+  		const at=this.firstMatch(i,_to);
+      if (at>0) {
+        this.newLexeme(_from,i);
+        return i-_from;
+      }
   	}
+    this.newLexeme(_from,_to);
   }
   peek():string{
   	const mark=this.ntib;
@@ -96,8 +125,12 @@ export class Tokenizer {
   	this.ntib=mark;
   	return [start,now];
   }
-  next() {//codePointAt 能正確讀一個 UTF32 字元
+  token(){
+    return this.tib.slice(this.ptib,this.ntib);
+  }
+  next(noautobreak=false) {//codePointAt 能正確讀一個 UTF32 字元
     this.skipBlank();
+    this.ptib=this.ntib;
     let ntib=this.ntib;
     const tib=this.tib;
     const ct=charType(tib.codePointAt(ntib));
@@ -107,17 +140,21 @@ export class Tokenizer {
         const ct2=charType(tib.codePointAt(ntib));
       	if(ct2!=ct) break; 
     }
-    const bestlen=this.breakat( this.ntib, ntib);
-    if (bestlen>0) {
-    	this.ntib+=bestlen;
-    } else {
-    	this.ntib=ntib;
+
+    if (!noautobreak) {
+      const bestlen=this.breakat( this.ntib, ntib);
+      if (bestlen>0) {
+        this.ntib+=bestlen;
+        return;
+      }
     }
+    this.ntib=ntib;
   }
   run(str:string, handlers:TokenHandler[]=[]) {
   	this.reset(str);
   	const out:[]=[];
   	const defaultHandler=handlers[''];
+    this.skipComment();
     while (this.ntib<this.tib.length) {
       let blankstart=this.ntib;
       this.skipBlank();
@@ -128,10 +165,30 @@ export class Tokenizer {
       this.next();
       this.skipComment();
       const handler=handlers[this.tib[this.ntib]];//use first character as selector
-      const tk=this.tib.slice(start,this.ntib);
+      let tk=this.tib.slice(start,this.ntib);
+
+      if (this.macroReturn) {//in macro
+        if (this.ntib>=this.macroEnd) {
+          this.ntib=this.macroReturn;
+          this.macroReturn=0;
+        } else {
+          tk=macroReplace.call(this,tk);
+        }
+      } else {
+        const macro=this.findMacro(tk);
+        if (macro) { //if macro cannot be execute, macroReturn is zero
+          if (execMacro.call(this,tk,...macro)) {//可執行後面就不輸出了
+            continue;
+          }
+        }
+      }
+      const ct=charType(tk.codePointAt(0));
+      if (ct==CharType.ascii||ct==CharType.chinese) {
+        this.macroBackward.unshift(tk);
+        this.macroBackward.length=2;
+      }
       if (handler&& handler(tk,start,this.ntib)) continue;
-	  defaultHandler&&defaultHandler(tk,start,this.ntib);
-	  this.lexicon.push([start,this.ntib]);
+	    defaultHandler&&defaultHandler(tk,start,this.ntib);
     }
   }
 }

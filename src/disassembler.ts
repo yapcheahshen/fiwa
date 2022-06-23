@@ -22,7 +22,7 @@ export class Disassembler {
 			if (!~renames.indexOf(code)) out+= (mapping?'':' ')+mapname;
 			if (~oneOps.indexOf(code)) {
 				let [num,c]=decodeUInt( codes,i+1);
-				if (~'⑴①⓵⒜ⓐⒶ'.indexOf(mapname)) {
+				if (~'⑴①⓵⒜ⓐⒶ㊀㍘㏠'.indexOf(mapname)) {
 					num=String.fromCodePoint(mapname.codePointAt(0)+num);
 				} 
 				out+=( (mapping?'':' ')+num);
