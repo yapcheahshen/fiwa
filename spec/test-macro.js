@@ -8,7 +8,7 @@ export const test_macro=async ({Var,Assembler,Tokenizer},tests,pass)=>{
 		tokens.length=0;
 		tokenizer.run(str,handlers);
 		tests++
-		// assert.deepEqual(tokens,out,message);
+		assert.deepEqual(tokens,out,message);
 		pass++;
 		// console.log('lexicon',tokenizer.getLexicon());
 		console.log(str,tokens)
@@ -16,7 +16,7 @@ export const test_macro=async ({Var,Assembler,Tokenizer},tests,pass)=>{
 	try {
 		//²¹₁₂₃  , ₘₙₒ 
 		//define macro in bracket, as macro cannot have parameter
-		test('(#加 圭₁相加)參加人數加10',['參加人數','圭','10','相加'],handlers ,'');
+		test('(#加 圭₁相加)人數加10',['人數','圭','10','相加'],handlers ,'');
 	} catch(e) {
 		console.error(e);
 	}
