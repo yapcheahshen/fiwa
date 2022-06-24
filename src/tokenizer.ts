@@ -1,14 +1,13 @@
-import {execMacro,parseMacro,macroReplace} from './macro.ts'
+/* Tokenizer is learning new chinese words on the way */
 import {charType,CharType} from './token.ts'
+import {Inst} from './constants.ts'
+import {CInstNames} from './cinst.ts'
 export interface TTokenier {
 	tib:string;
 	ptib,ntib:number;
-  macroReturn:number; //return to this ntib after macro finish
-  macroEnd   :number ; //run until here
-  macroForward:string[];
-  macroBackward:string[];
-	lexicon: [number,number][];
+	lexicon: [number,number, number][];
 	next():string;
+  newLexeme(from,to,end):void;
 	reset(tib):void;
 	end():boolean;
 }
@@ -16,7 +15,7 @@ export type TokenHandler={
 	 (tk: string): boolean;
 }
 export type CountedString=[addr:number,cnt:number, type:number];
-export class Tokenizer {
+export class Tokenizer implements TTokenizer{
   constructor (tib=''){
   	this.reset(tib);
   }
@@ -29,41 +28,10 @@ export class Tokenizer {
   end():boolean{
   	return ntib>=tib;
   }
-  addMacro(name,def){
-    addMacro.call(this,name,def);
-  }
-  skipComment():void {
-    let ntib=this.ntib;
-    const tib=this.tib;
-    if (tib[ntib]=='\\') {
-      while ( ntib <tib.length && tib.codePointAt(ntib)>=0x20) ntib++;
-      return this.next();
-    } else if (tib[ntib]=='(') {
-      if (tib[ntib+1]=='#') {
-        ntib=parseMacro.call(this);
-      } else {
-        while ( ntib <tib.length && tib.charAt(ntib)!==')') ntib++;
-        ntib++; 
-      }
-      this.ntib=ntib;
-      return ;
-    } else return ;
-    // console.log('comment',tib.slice(this.ntib,ntib));
-    this.ntib=ntib;
-  }
   skipBlank(){
   	let ntib=this.ntib;
   	while (this.tib.codePointAt(ntib)<=0x20) ntib++; //skip blank characters
   	this.ntib=ntib;
-  }
-  findMacro(name) {
-    for (let i=this.lexicon.length-1;i>=0;i--) {
-      const [from,to,macro]=this.lexicon[i];
-      if (!macro) continue;
-      if (this.tib.slice(from,to)===name) {
-        return [to+1,macro];
-      }
-    }
   }
   firstMatch(_from:number,_to:number,tib:string, lexicon:CountedString[]):number{ //找第一個符合的
     tib=tib||this.tib;
@@ -96,13 +64,21 @@ export class Tokenizer {
   	}
   	return bestlen;
   }
-  newLexeme(from,to,macro=0) {
+  newLexeme(from,to, macroend=0) {
     const tk=this.tib.slice(from,to);
+    if (!tk.trim())return;
     if (parseInt(tk).toString()==tk) return ;
     if (tk.slice(0,2)=='0x' && !isNaN(parseInt(tk.slice(2),16))) {
       return;
-    } 
-    if (tk[0]!=='(') this.lexicon.push([from,to,macro]);
+    }
+    if (Inst[tk] || CInstNames[tk]) {
+      console.log(Inst)
+      return;
+    }
+    const cp=tk.charCodeAt(0);
+    if (cp<0x3400) return;
+    // if (cp>=0xd800&&cp<0xdcff&&tk.length<3) return;
+    this.lexicon.push([from,to,macroend]);
   }
   breakat(_from,_to):number{
   	const bestlen=this.bestMatch(_from,_to); //開頭最長符號
@@ -118,8 +94,6 @@ export class Tokenizer {
   }
   peek():string{
   	const mark=this.ntib;
-  	this.skipBlank();
-  	const start=this.ntib;
   	this.next();
   	const now=this.ntib;
   	this.ntib=mark;
@@ -129,18 +103,16 @@ export class Tokenizer {
     return this.tib.slice(this.ptib,this.ntib);
   }
   next(noautobreak=false) {//codePointAt 能正確讀一個 UTF32 字元
-    this.skipBlank();
+    // this.skipBlank();
     this.ptib=this.ntib;
     let ntib=this.ntib;
     const tib=this.tib;
     const ct=charType(tib.codePointAt(ntib));
-    while (ntib<tib.length && tib.codePointAt(ntib)>0x20 ) {
-        //if (tib.charAt(ntib)==';' && rawtoken.length) break // ; 必須在開頭
+    while (ntib<tib.length) {
        	ntib++;
         const ct2=charType(tib.codePointAt(ntib));
       	if(ct2!=ct) break; 
     }
-
     if (!noautobreak) {
       const bestlen=this.breakat( this.ntib, ntib);
       if (bestlen>0) {
@@ -150,45 +122,15 @@ export class Tokenizer {
     }
     this.ntib=ntib;
   }
-  run(str:string, handlers:TokenHandler[]=[]) {
+  run(str:string) {
   	this.reset(str);
   	const out:[]=[];
-  	const defaultHandler=handlers[''];
-    this.skipComment();
     while (this.ntib<this.tib.length) {
-      let blankstart=this.ntib;
-      this.skipBlank();
-      if (this.ntib>blankstart) {
-      	 defaultHandler&&defaultHandler(this.tib.slice(blankstart,this.ntib),blankstart,this.ntib);
-      }
       let start=this.ntib;
       this.next();
-      this.skipComment();
-      const handler=handlers[this.tib[this.ntib]];//use first character as selector
       let tk=this.tib.slice(start,this.ntib);
-
-      if (this.macroReturn) {//in macro
-        if (this.ntib>=this.macroEnd) {
-          this.ntib=this.macroReturn;
-          this.macroReturn=0;
-        } else {
-          tk=macroReplace.call(this,tk);
-        }
-      } else {
-        const macro=this.findMacro(tk);
-        if (macro) { //if macro cannot be execute, macroReturn is zero
-          if (execMacro.call(this,tk,...macro)) {//可執行後面就不輸出了
-            continue;
-          }
-        }
-      }
-      const ct=charType(tk.codePointAt(0));
-      if (ct==CharType.ascii||ct==CharType.chinese) {
-        this.macroBackward.unshift(tk);
-        this.macroBackward.length=2;
-      }
-      if (handler&& handler(tk,start,this.ntib)) continue;
-	    defaultHandler&&defaultHandler(tk,start,this.ntib);
+      out.push([tk, start, this.ntib ] );
     }
+    return out;
   }
 }

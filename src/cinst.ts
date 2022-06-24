@@ -13,7 +13,8 @@
 // running                  馳 正在執行的程序。
 // tracing and debugging    䮱 已停下來，可以觀察的程序。
 
-// 需資料參與、靜態的素材                資材料    貝字和米部、木部  𥹓 糆
+// 需資料參與、靜態的素材                資材料    貝字和米部、木部 禾 𥹓 糆
+// address,pointer 帶止 (指)
 // 和程序相關的結構、網絡、組織相關用絲字部   
 // assemble                 織
 // compiling                編
@@ -104,7 +105,7 @@ export const CInstNames={
 "𦐰絕正":"f64_abs",   "𦐰負反":"f64_neg", "𦐰天板":"f64_ceil", "𦐰地板":"f64_floor", "𦐰截整":"f64_trunc",
 "𦐰極近":"f64_nearest", "𦐰方根":"f64_sqrt",
 "𩮌加":"f64_add",	"𩮌減":"f64_sub","𩮌乘":"f64_mul","𩮌除":"f64_div",
-"𩮌小":"f64_min", "𩮌大":"f64_max","𦐰抄號":"f64_copysign",
+"𩮌最小":"f64_min", "𩮌最大":"f64_max","𦐰抄號":"f64_copysign",
 "圭包卦":"i32_wrap_i64",  "圭截䳏":"i32_trunc_f32_s",  "洼截䳏":"i32_trunc_f32_u",
 "洼截𦐰":"i32_trunc_f64_s", "圭截𦐰":"i32_trunc_f64_u", "啩展洼":"i64_extend_i32_s",
 "卦展圭":"i64_extend_i32_u",  "啩截䳏":"i64_trunc_f32_s",  "卦截䳏":"i64_trunc_f32_u",

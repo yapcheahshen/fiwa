@@ -1,6 +1,6 @@
 /* 編寫 WebAssembly 指令*/
 import {encInt,encUInt} from './utils.ts'
-import {Inst,Var,bytecode} from './constants.ts'
+import {Inst,Var,bytecode,splitInstruction} from './constants.ts'
 import {Writer} from './writers.ts'
 //簡單指令
 const simpleInsts=`unreachable,nop,drop,select,else,end,ret,i32_eqz,i32_eq,i32_ne,
@@ -47,7 +47,7 @@ export class CodeWriter extends Writer implements ICodeWriter{
 		this.type=type;
 	}
 	private addInst(str:string, doer) { //創建填入bytecode的成員函式
-		const insts=str.split(/[\r\n ]*,[\r\n ]*/).map(it=>it.trim());
+		const insts=splitInstruction(str);
 		for (let i=0;i<insts.length;i++){
 			const name=insts[i];
 			this[name] = doer(Inst[name],this._code);

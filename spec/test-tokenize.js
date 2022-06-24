@@ -5,21 +5,20 @@
 import assert from "assert";
 export const test_tokenize=async ({Var,Assembler,Tokenizer},tests,pass)=>{
 	const tokenizer=new Tokenizer();
-	const tokens=[];
 
-	const handlers={"": (tk)=>tokens.push(tk) } ;
-	const test=(str, out, handlers,message)=>{
-		tokens.length=0;
-		tokenizer.run(str,handlers);
+	//const handlers={"": (tk)=>tokens.push(tk) } ;
+	const test=(str, out, message)=>{
+		let tokens=tokenizer.run(str).map(it=>it[0]);
 		tests++
 		assert.deepEqual(tokens,out,message);
+
 		pass++;
 	}
 	try {
-		test('a bb ccc',['a',' ','bb',' ','ccc'],handlers );
-		test(`甲乙 甲乙丙丁`,	['甲乙',' ','甲乙','丙丁'],handlers ); 
-		test(`甲乙 丙丁甲甲乙乙`,['甲乙',' ','丙丁甲','甲乙','乙'],handlers );//
-		test(`天a乙丙1 甲乙丙丁3乙`,['天','a','乙丙','1',' ','甲','乙丙','丁','3','乙'],handlers );
+		test('a bb ccc',['a',' ','bb',' ','ccc'] );
+		test(`甲乙 甲乙丙丁`,	['甲乙',' ','甲乙','丙丁'] ); 
+		test(`甲乙 丙丁甲甲乙乙`,['甲乙',' ','丙丁甲','甲乙','乙'] );//
+		test(`天a乙丙1 甲乙丙丁3乙`,['天','a','乙丙','1',' ','甲','乙丙','丁','3','乙'] );
 	} catch(e) {
 		console.error(e);
 	}
