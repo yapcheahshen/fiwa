@@ -1,5 +1,5 @@
 import {Inst,InstNames} from './constants.ts'
-import {CInstNames} from './cinst.ts'
+import {CNamesInst} from './cinst.ts'
 export enum CharType {
 	blank=0;
 	ascii=1;  //might combine
@@ -60,7 +60,7 @@ export const tokenType:TokenType=tk=>{
 	}
     let bc=InstNames[tk]; 
     if (!bc && bc!==0) {
-    	bc=Inst[CInstNames[tk]];
+    	bc=Inst[CNamesInst[tk]];
     }
     if (bc || bc===0) {
     	if (bc===Inst.block||bc===Inst.loop||bc===Inst.if||bc===Inst.else
@@ -71,4 +71,36 @@ export const tokenType:TokenType=tk=>{
     }
 
     return TokenType.function;
+}
+
+//only BMP
+//帶序字
+export const NumberedChar='⑴⒈①⓵⒜ⓐⒶ㊀㈠㍘㏠㋀'; //these can be use to represent code+number
+
+export const NumberedFirstChar=(nc:string):string=>{
+	const cp=nc.codePointAt(0);
+    if (cp>=0x2474&&cp<=0x2487) return 0x2474;// ⑴~20
+    else if (cp>=0x2460&&cp<=0x2473) return 0x2460;// ①~20
+    else if (cp>=0x24f5&&cp<=0x24fe) return 0x24f5;// ⓵~10
+    else if (cp>=0x2488&&cp<=0x249b) return 0x2488;// ⒈~20
+    else if (cp>=0x249c&&cp<=0x24b5) return 0x249c;// ⒜~26
+    else if (cp>=0x24b6&&cp<=0x24cf) return 0x24b6;// Ⓐ~26
+    else if (cp>=0x24d0&&cp<=0x24e9) return 0x24d0;// ⓐ~26
+    
+    else if (cp>=0x3220&&cp<=0x3229) return 0x3220;// ㈠~10
+    else if (cp>=0x3280&&cp<=0x3289) return 0x3280;// ㊀~10
+    else if (cp>=0x3358&&cp<=0x336f) return 0x3358;// ㍘~23
+    else if (cp>=0x32c0&&cp<=0x32cb) return 0x32c0;// ㋀~12
+    else if (cp>=0x33E0&&cp<=0x33FE) return 0x33E0;// ㏠~31
+   	return nc;
+}
+
+export const extractNumberedChar=(nc:string):string=>{
+	const tt=tokenType(nc);
+	const cp=nc.codePointAt(0)
+	if (tt==TokenType.get_local||tt==TokenType.set_local|tt==TokenType.tee_local
+	||tt==TokenType.get_global||tt==TokenType.set_global) {
+		return (cp-NumberedFirstChar(nc)).toString();
+	}
+	return '';
 }

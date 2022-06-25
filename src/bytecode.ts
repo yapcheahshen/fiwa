@@ -1,5 +1,5 @@
 import {Inst,splitInstruction} from './constants.ts';
-import {CInstNames} from './cinst.ts';
+import {CNamesInst} from './cinst.ts';
 import {TokenType,tokenType} from './token.ts';
 const buildStackEffect=()=>{
     const stackEffects=[];
@@ -34,8 +34,28 @@ export const stackEffect=(tk:string)=>{
 
     let bc=Inst[tk]; 
     if (!bc && bc!==0) {
-    	bc=Inst[CInstNames[tk]];
+    	bc=Inst[CNamesInst[tk]];
     }
     if (!bc) return 0;
     return StackEffect[bc]||0;
+}
+
+export enum ForwardOperand { none=0 ; uint8=1; leb128 =2 ; dual128 =3}
+export const getForwardOperand=(i:number):ForwardOperand=>{
+	if (i==Inst.i32_load||i==Inst.i64_load||i==Inst.f32_load||i==Inst.f64_load
+    ||i==Inst.i32_load8_s||i==Inst.i32_load8_u||i==Inst.i32_load16_s||i==Inst.i32_load16_u
+    ||i==Inst.i64_load8_s||i==Inst.i64_load8_u||i==Inst.i64_load16_s||i==Inst.i64_load16_u
+    ||i==Inst.i64_load32_s||i==Inst.i64_load32_u
+    ||i==Inst.i32_store||i==Inst.i64_store||i==Inst.f32_store||i==Inst.f64_store||i==Inst.i32_store8||i==Inst.i32_store16
+    ||i==Inst.i64_store8||i==Inst.i64_store16||i==Inst.i64_store32) return ForwardOperand.dual128;
+
+    if (i==Inst.get_local||i==Inst.set_local||i==Inst.tee_local
+    ||i==Inst.get_global||i==Inst.set_global||i==Inst.call||i==Inst.call_indirect
+    ) {
+    	return ForwardOperand.leb128; //unlimited number
+	}
+    if (i==Inst.if || i==Inst.br||i==Inst.br_if||i==Inst.br_table||i==Inst.block||i==Inst.loop) {
+    	return ForwardOperand.uint8;
+    }
+	return ForwardOperand.none;
 }

@@ -70,9 +70,11 @@ export class CodeWriter extends Writer implements ICodeWriter{
 	br_if(depth:number) {this._code.push(Inst.br_if,depth)	}
 	call(name:string|number) {
 		if (typeof name==='number') {
-			this._code.push(Inst.call,...encUInt(name));
+			this._code.push(Inst.call,...encUInt(name)); //已知funcIndex
 		} else { //call by name
 			this._code.push(Inst.call); 
+			//後面跟funcIndex , 到resolveName 才會把一個 leb128 塞進去
+			//先存下名字和要地址
 			this._functionLinks.push({location: this._code.length, name});
 		}
 	}

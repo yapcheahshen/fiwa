@@ -1,6 +1,6 @@
 import {bytecode,InstNames,Inst} from "./constants.ts";
-import {decodeUInt} from './leb128.ts'
-import {CInstNames} from './cinst.ts';
+import {decodeUInt} from './utils.ts'
+import {CNamesInst} from './cinst.ts';
 interface IDisassembler {
 
 }

@@ -63,11 +63,13 @@
 //
 //  絘 next
 //駖集  䋂  爼
-export const CInstNames={
+export const CNamesInst={
 "◆":"unreachable", "◇":"nop","□":"block","◎":"loop", "？":"if", "！":"else","。":"end",
-"↗":"br", "♂":"br_if", "↘":"br_table", "↖":"return",
+"↪":"br", "↩":"br_if", "↘":"br_table", "⏎":"return",
+//alias 
+//"🔄":"loop","⏎":"return",
 //1_
-"Ⓐ":"call", "㍘":"call_indirect", "𥹓":"drop", "䊁":"select",
+"※":"call", "㍘":"call_indirect", "𥹓":"drop", "⚤":"select",
 "⑴":"get_local","①":"set_local","⓵":"tee_local", "⒜":"get_global", "ⓐ":"set_global",
 //2_
 "入":"i32_load",   "籴":"i64_load" ,"鳰":"f32_load",       "糴":"f64_load",
@@ -116,4 +118,9 @@ export const CInstNames={
 "𦐰變啩":"f64_convert_i64_s","𦐰變卦":"f64_convert_i64_u",   "𦐰升䳏":"f64_promote_f32",
 "圭譯䳏":"i32_reinterpret_f32","卦譯𦐰":"i64_reinterpret_f64",
 "䳏譯圭":"f32_reinterpret_i32","䳏譯卦":"f64_reinterpret_i64"
+}
+
+export const InstCNames={};
+for (let n in CNamesInst) {
+	InstCNames[CNamesInst[n]]=n;
 }
