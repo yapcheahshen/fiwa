@@ -1,4 +1,5 @@
 import {ordinalOf} from './ordinal.ts'
+import {parseNumber} from './utils.ts';
 export const InstAttr={immediate:0,id:1,en:2,zh:3,stackin:4,stackout:5,depth:6};
 export const Instructions=[
 // , immediate,id         ,en, zh, stackin/out, , depth(1,-1)
@@ -210,7 +211,29 @@ export const immOfSym=(symbol:string):number=>{
 	}
 	return NaN;
 }
-
+export const instType=(symbol:string):string=>{
+	const code=codeOfSym(symbol);
+	if (~code) {
+		const id=Instructions[code][InstAttr.id];
+		if (code==Mnemonic.if ||code==Mnemonic.end||
+		    code==Mnemonic.block||code==Mnemonic.loop) {
+			return "depth";
+		} else if (code>=0x20&& code<=0x26) {
+			return "variable";
+		} else if (code>=0x28 && code<=0x40) {
+			return "memory";
+		} else if (code>=0x41 &&code<=0x44) {
+			return "constant";
+		} else if (code==Mnemonic.call || code==Mnemonic.call_indirect|| code==Mnemonic.ret) {
+			return "subroutine";
+		} 
+		return "arithmetic";
+	} else {
+		const [n,const_type]=parseNumber(symbol);
+		if (const_type) return "constant";
+		return 'unknown';
+	}
+}
 //export breakImmediate=
 export const codeOfSym=(symbol:string):number=>{
 	let code=-1;
