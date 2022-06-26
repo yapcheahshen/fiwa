@@ -66,8 +66,9 @@ export class CodeWriter extends Writer implements ICodeWriter{
 	block(r_t:Var)   {this._code.push(Inst.block,r_t||Var.i32)	}
 	loop(r_t:Var)    {this._code.push(Inst.loop,r_t||Var.i32)	}
 	if(r_t:Var)      {this._code.push(Inst.if,r_t||Var.i32)	}
-	br(depth:number)    {this._code.push(Inst.br,depth)	}
-	br_if(depth:number) {this._code.push(Inst.br_if,depth)	}
+	br(idx:number)    {this._code.push(Inst.br, ...encUInt(idx))	}
+	br_if(idx:number) {this._code.push(Inst.br_if,...encUInt(idx))	}
+	br_table(idx:number) {this._code.push(Inst.br_if,...encUInt(idx))	}
 	call(name:string|number) {
 		if (typeof name==='number') {
 			this._code.push(Inst.call,...encUInt(name)); //已知funcIndex

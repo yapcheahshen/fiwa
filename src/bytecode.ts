@@ -51,11 +51,8 @@ export const getForwardOperand=(i:number):ForwardOperand=>{
 
     if (i==Inst.get_local||i==Inst.set_local||i==Inst.tee_local
     ||i==Inst.get_global||i==Inst.set_global||i==Inst.call||i==Inst.call_indirect
-    ) {
+    ||i==Inst.br||i==Inst.br_table||i==Inst.if ||i==Inst.br_if||i==Inst.block||i==Inst.loop ) {
     	return ForwardOperand.leb128; //unlimited number
 	}
-    if (i==Inst.if || i==Inst.br||i==Inst.br_if||i==Inst.br_table||i==Inst.block||i==Inst.loop) {
-    	return ForwardOperand.uint8;
-    }
 	return ForwardOperand.none;
 }

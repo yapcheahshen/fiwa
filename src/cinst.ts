@@ -64,13 +64,11 @@
 //  絘 next
 //駖集  䋂  爼
 export const CNamesInst={
-"◆":"unreachable", "◇":"nop","□":"block","◎":"loop", "？":"if", "！":"else","。":"end",
-"↪":"br", "↩":"br_if", "↘":"br_table", "⏎":"return",
-//alias 
-//"🔄":"loop","⏎":"return",
-//1_
-"※":"call", "㍘":"call_indirect", "𥹓":"drop", "⚤":"select",
-"⑴":"get_local","①":"set_local","⓵":"tee_local", "⒜":"get_global", "ⓐ":"set_global",
+"◆":"unreachable", "◇":"nop","〈":"block","☉":"loop", "？":"if", "！":"else","〉":"end",//◎
+"㏠":"br", "䷀":"br_if", "㋀":"br_table", "⏎":"return",
+
+"가":"call", "㋐":"call_indirect", "𥹓":"drop", "⚤":"select",
+"⑴":"get_local","①":"set_local","⒈":"tee_local", "⒜":"get_global", "ⓐ":"set_global",
 //2_
 "入":"i32_load",   "籴":"i64_load" ,"鳰":"f32_load",       "糴":"f64_load",
 "𦵔入":"i32_load8_s",  "爼入":"i32_load8_u","泮入":"i32_load16_s","半入":"i32_load16_u", 

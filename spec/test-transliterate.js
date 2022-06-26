@@ -1,11 +1,15 @@
 import assert from "assert";
+import {fibonacci,sum_array} from '../src/stockwasm.ts'
 export const test_transliterate=async ({Var,Assembler,Transliterator},tests,pass)=>{
 	const transliterator=new Transliterator();
 
 	const testFromText=(str, out, lang,message)=>{
 		const r=transliterator.fromText(str,lang);
 		tests++
-		if (message=='dump') console.log( 'GOT '+r.join(','),'\nEXP',out.join(','))
+		if (message=='dump') {
+			console.log( 'GOT '+r.join(','),'\nEXP',out.join(','))
+			console.log(transliterator.toText(r,'concise'))
+		}
 		else assert.deepEqual(r,out,message);
 		pass++;
 	}
@@ -36,57 +40,20 @@ export const test_transliterate=async ({Var,Assembler,Transliterator},tests,pass
 		testToText([33,100],'set_local100');
 		
 		testFromText('br1',[12,1]); 
-		testToText([12,232],'br232');  //followunsigned byte
+		testToText([12,1],'br1');  //follow unsigned byte
 
-		const fibonacci=[0x20,0x0,0x41,0x2,0x49,0x4,0x40,0x20,0x0,0xF,0x0B,0x20,0x0,
-			0x41,0x02,0x6B,0x10,0x0,0x20,0x0,0x41,0x1,0x6B,0x10,0x0,0x6A,0x0F,0xB];
 		testToText(fibonacci,'get_local0 2 i32_lt_u if64 get_local0 return end get_local0 2 i32_sub call0 get_local0 1 i32_sub call0 i32_add return end');
-		testToText(fibonacci,'⑴ 2相小？⑴⏎。⑴ 2相減※0⑴ 1相減※0相加⏎。','zh');
+		testToText(fibonacci,'⑴ 2相小？⑴⏎。⑴ 2相減가⑴ 1相減가相加⏎。','zh');
 
-/*
-int sum_array(int* input, int length) {
-  int sum = 0;
-  for (int i = 0; i < length; ++i) {
-    sum += input[i];
-  }
-  return sum;
-  0③□⑵ 1湘小↩0◎⑴入⑶相加③⑴ 4相加①⑵ -1相加⓶↩0。。⑶。
-}
-    (local $var2 i32) 
-    i32.const 0
-    set_local $var2
-    block $label0
-      get_local $var1
-      i32.const 1
-      i32.lt_s
-      br_if $label0
-      loop $label1
-        get_local $var0
-        i32.load
-        get_local $var2
-        i32.add
-        set_local $var2
-        get_local $var0
-        i32.const 4
-        i32.add
-        set_local $var0
-        get_local $var1
-        i32.const -1
-        i32.add
-        tee_local $var1
-        br_if $label1
-      end $label1
-    end $label0
-    get_local $var2*/		
-    	const sum_array=[0x41,0,0x21,0x02,0x02,0x40,0x20,0x01,0x41,0x01,0x48,0x0D,0,0x03,0x40,0x20,0,0x28,0x02,0,0x20,0x02,0x6A,0x21,0x02,0x20,0,0x41,0x04,0x6A,0x21,0,0x20,0x01,0x41,0x7F,0x6A,0x22,0x01,0x0D,0,0x0B,0x0B,0x20,0x02,0x0B];
-    	const sum_array_concise='0 sl2 blk gl1 1 lt_s br_if0 loop gl0 load gl2 add sl2 gl0 4 add sl0 gl1 -1 add tl1 br_if0 end end gl2 end'
-    	const sum_array_zh='0③□⑵ 1湘小↩0◎⑴入⑶相加③⑴ 4相加①⑵ -1相加⓶↩0。。⑶。';
-    	//                  0③□⑵小于1↩0◎⑴入加給⑶4加給⑴-1加存⑵↩0。。⑶。 //more clear after macro
+	
+    	const sum_array_concise='0 set2 blk get1 1 lt_s bif0 loop get0 load gl2 add set2 get0 4 add set0 gl1 -1 add tee1 br_if0 end end get2 end'
+    	const sum_array_zh='0③□⑵ 1湘小㍘◎⑴入⑶相加③⑴ 4相加①⑵ -1相加⒉㍘。。⑶。';
+    	//                  0③□⑵小于1㍘◎⑴入加給⑶4加給⑴-1加存⑵㍘。。⑶。 //more clear after macro
 		testToText(sum_array,sum_array_concise,'concise');
 		testToText(sum_array,sum_array_zh ,'zh')
 
 		testFromText(sum_array_concise,sum_array,'concise');
-		testFromText(sum_array_zh,sum_array,'zh');
+		testFromText(sum_array_zh,sum_array,'zh','dump');
 
 	} catch(e) {
 		console.error(e);
