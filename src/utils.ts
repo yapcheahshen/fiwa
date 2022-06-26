@@ -1,4 +1,5 @@
 import {Var,Inst } from './constants.ts';
+import {Mnemonic} from './namer.ts'
 export const encUInt = (value:number) => { //encode unsigned LEB128
     //if (value < 0 || value !== Math.floor(value)) debugger;
     const output = [];
@@ -50,7 +51,7 @@ export const parseNumber=str=>{
         n=parseInt(str.slice(2),16);
     else if (parseFloat(str).toString()==str) n=Math.floor(parseFloat(str));
     
-    if (!isNaN(n)) return [n,n>=2147483648?Inst.i64_const:Inst.i32_const];
+    if (!isNaN(n)) return [n,n>=2147483648?Mnemonic.i64_const:Mnemonic.i32_const];
     return [0,0];
 }
 //https://handwiki.org/wiki/LEB128

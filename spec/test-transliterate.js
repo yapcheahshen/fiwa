@@ -1,17 +1,18 @@
 import assert from "assert";
-import {fibonacci,sum_array} from '../src/stockwasm.ts'
-export const test_transliterate=async ({Var,Assembler,Transliterator},tests,pass)=>{
-	const transliterator=new Transliterator();
 
+export const test_transliterate=async ({Var,Assembler,Transliterator,StockWasm},tests,pass)=>{
+	const transliterator=new Transliterator();
+  const {fibonacci,sum_array} = StockWasm;
 	const testFromText=(str, out, lang,message)=>{
 		const r=transliterator.fromText(str,lang);
 		tests++
 		if (message=='dump') {
 			console.log( 'GOT '+r.join(','),'\nEXP',out.join(','))
 			console.log(transliterator.toText(r,'concise'))
+		}	else {
+			assert.deepEqual(r,out,message);
+			pass++;
 		}
-		else assert.deepEqual(r,out,message);
-		pass++;
 	}
 	const testToText=(bytes,out,lang,message)=>{
 		const r=transliterator.toText(bytes,lang);
@@ -40,20 +41,20 @@ export const test_transliterate=async ({Var,Assembler,Transliterator},tests,pass
 		testToText([33,100],'set_local100');
 		
 		testFromText('br1',[12,1]); 
-		testToText([12,1],'br1');  //follow unsigned byte
+		testToText([12,12],'br12');  //follow unsigned byte
 
-		testToText(fibonacci,'get_local0 2 i32_lt_u if64 get_local0 return end get_local0 2 i32_sub call0 get_local0 1 i32_sub call0 i32_add return end');
-		testToText(fibonacci,'⑴ 2相小？⑴⏎。⑴ 2相減가⑴ 1相減가相加⏎。','zh');
-
+		testToText(fibonacci,'get_local0 2 i32_lt_u if get_local0 return end get_local0 2 i32_sub call0 get_local0 1 i32_sub call0 i32_add return end');
+		testToText(fibonacci,'⑴ 2相小？⑴⏎〉⑴ 2相減가⑴ 1相減가相加⏎〉','zh');
 	
-    	const sum_array_concise='0 set2 blk get1 1 lt_s bif0 loop get0 load gl2 add set2 get0 4 add set0 gl1 -1 add tee1 br_if0 end end get2 end'
-    	const sum_array_zh='0③□⑵ 1湘小㍘◎⑴入⑶相加③⑴ 4相加①⑵ -1相加⒉㍘。。⑶。';
-    	//                  0③□⑵小于1㍘◎⑴入加給⑶4加給⑴-1加存⑵㍘。。⑶。 //more clear after macro
-		testToText(sum_array,sum_array_concise,'concise');
-		testToText(sum_array,sum_array_zh ,'zh')
+    const sum_array_concise='0 =$2 blk $1 1 lts bif0 loop $0 load $2 add =$2 $0 4 add =$0 $1 -1 add @$1 bif0 end end $2 end'
+    const sum_array_zh='0③〈⑵ 1湘小䷀☉⑴入⑶相加③⑴ 4相加①⑵ -1相加⒉䷀〉〉⑶〉';
+  // //   	//                  0③□⑵小于1㍘◎⑴入加給⑶4加給⑴-1加存⑵㍘。。⑶。 //more clear after macro
 
 		testFromText(sum_array_concise,sum_array,'concise');
-		testFromText(sum_array_zh,sum_array,'zh','dump');
+		testFromText(sum_array_zh,sum_array,'zh');
+
+		testToText(sum_array,sum_array_concise,'concise');
+		testToText(sum_array,sum_array_zh ,'zh')
 
 	} catch(e) {
 		console.error(e);

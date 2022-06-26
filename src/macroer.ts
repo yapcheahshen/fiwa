@@ -9,8 +9,7 @@
 // ₂  same as above, as ntib already moved
 // ₘ  if next first is non numberic and no-blank, consume it
 // 
-import {charType,CharType} from './token.ts'
-import {Tokenizer} from './tokenizer.ts';
+import {Tokenizer,tokenType,TokenType} from './tokenizer.ts'
 interface TMacroer{
   macroReturn:number; //return to this ntib after macro finish
   macroEnd   :number ; //run until here
@@ -62,8 +61,8 @@ export class Macroer extends Tokenizer implements TMacroer {
           }
         }
       }
-      const ct=charType(tk.codePointAt(0));
-      if (ct==CharType.ascii||ct==CharType.chinese) {
+      const tt=tokenType(tk.codePointAt(0));
+      if (tt==TokenType.ascii||tt==TokenType.chinese) {
         this.macroBackward.unshift(tk);
         this.macroBackward.length=2;
       }

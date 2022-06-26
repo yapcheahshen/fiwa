@@ -1,7 +1,22 @@
 /* Tokenizer is learning new chinese words on the way */
-import {charType,CharType} from './token.ts'
-import {Inst} from './constants.ts'
-import {CNamesInst} from './cinst.ts'
+
+import {codeOfSym} from './namer.ts'
+export enum TokenType {
+  blank=0;
+  ascii=1;  //might combine
+  chinese=2; //might combine
+  separator=3; //only one char allow for a token
+}
+export const tokenType:TokenType=cp=>{
+  if (cp<=0x20) return TokenType.blank;
+  if (cp<0x100) {
+    return TokenType.ascii;
+  } else if ((cp>=0x3400&&cp<=0x4db5) ||(cp>=0x4e00&&cp<=0x9fff) || (cp>=0xd800&&cp<=0xdcff )||(cp>=0xe000&&cp<=0xf9ff )) {
+    return TokenType.chinese;
+  } else return TokenType.separator;
+}
+
+
 export interface TTokenier {
 	tib:string;
 	ptib,ntib:number;
@@ -65,13 +80,12 @@ export class Tokenizer implements TTokenizer{
   	return bestlen;
   }
   newLexeme(from,to, macroend=0) {
-    const tk=this.tib.slice(from,to);
-    if (!tk.trim())return;
-    if (parseInt(tk).toString()==tk) return ;
+    const tk=this.tib.slice(from,to).trim();
+    if (!tk) return;
+    if (codeOfSym(tk)!==-1) return ;
     if (tk.slice(0,2)=='0x' && !isNaN(parseInt(tk.slice(2),16))) {
       return;
     }
-    if (Inst[tk] || CNamesInst[tk]) return;
     const cp=tk.charCodeAt(0);
     if (cp<0x3400) return;
     // if (cp>=0xd800&&cp<0xdcff&&tk.length<3) return;
@@ -104,11 +118,11 @@ export class Tokenizer implements TTokenizer{
     this.ptib=this.ntib;
     let ntib=this.ntib;
     const tib=this.tib;
-    const ct=charType(tib.codePointAt(ntib));
+    const ct=tokenType(tib.codePointAt(ntib));
     while (ntib<tib.length) {
        	ntib++;
-        const ct2=charType(tib.codePointAt(ntib));
-      	if(ct2!=ct || ct2==CharType.separator ) break; 
+        const ct2=tokenType(tib.codePointAt(ntib));
+      	if(ct2!=ct || ct2==TokenType.separator ) break; 
     }
     if (!noautobreak) {
       const bestlen=this.breakat( this.ntib, ntib);

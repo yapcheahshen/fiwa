@@ -1,6 +1,7 @@
 /* 編寫 WebAssembly 指令*/
 import {encInt,encUInt} from './utils.ts'
-import {Inst,Var,bytecode,splitInstruction} from './constants.ts'
+import {Var,bytecode,splitInstruction} from './constants.ts'
+import {Instructions,Mnemonic} from './namer.ts';
 import {Writer} from './writers.ts'
 //簡單指令
 const simpleInsts=`unreachable,nop,drop,select,else,end,ret,i32_eqz,i32_eq,i32_ne,
@@ -50,7 +51,7 @@ export class CodeWriter extends Writer implements ICodeWriter{
 		const insts=splitInstruction(str);
 		for (let i=0;i<insts.length;i++){
 			const name=insts[i];
-			this[name] = doer(Inst[name],this._code);
+			this[name] = doer( Mnemonic[name],this._code);
 		}
 	}
 	private simple(inst:Inst,_code:bytecode[]) {

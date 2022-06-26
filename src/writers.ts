@@ -1,6 +1,7 @@
 /* 各種小writer */
 import {encUInt,encUIntString} from './utils.ts'
-import {Var,bytecode,ExternalKind,Inst} from './constants.ts'
+import {Var,bytecode,ExternalKind} from './constants.ts'
+import {Mnemonic} from './namer.ts'
 export class Writer {
 	write(){}
 }
@@ -110,7 +111,7 @@ export class GlobalWriter extends Writer implements IGlobalWriter{
 	    const out = [];
 	    out.push(this.type);
 	    out.push(this._mutable?1:0); //const:0 , variable :1
-	    const instruction=[Inst.i32_const,...encUInt(this.val),Inst.end]
+	    const instruction=[Mnemonic.i32_const,...encUInt(this.val),Mnemonic.end]
 	    out.push(...instruction);
 	    return out;
 	}
@@ -128,7 +129,7 @@ export class DataWriter extends Writer implements IDataWriter{
 	write(){ 
 	    const out = [];
 	    out.push(0 ); //memIdx is always 0
-	    const instruction=[Inst.i32_const, ...encUInt(this.offset), Inst.end];
+	    const instruction=[Mnemonic.i32_const, ...encUInt(this.offset), Mnemonic.end];
 	    out.push(...instruction); //const with value
 	    out.push(...encUInt( this.data.length),...this.data);
 	    return out;

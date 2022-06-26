@@ -1,0 +1,1 @@
+﻿https://hacks.mozilla.org/2017/02/what-makes-webassembly-fast/
