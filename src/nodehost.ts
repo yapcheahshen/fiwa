@@ -4,6 +4,7 @@ import {Macroer} from "./macroer.ts";
 import {TypeChecker} from "./typechecker.ts";
 import Assembler from "./assembler.ts"
 import {Learner} from './learner.ts';
+import {ModReader} from './modreader.ts';
 import {Disassembler} from "./disassembler.ts"
 import {Transliterator} from "./transliterator.ts"
 import * as Namer from './namer.ts';
@@ -14,6 +15,6 @@ import {Fiwa} from './browserhost.ts';
 import * as StockWasm from './stockwasm.ts';
 
 if (typeof global!=='undefined') {
-	global.testable={Fiwa,Assembler,parseSignature,Var,Learner,StockWasm,Namer,
+	global.testable={Fiwa,Assembler,parseSignature,Var,Learner,StockWasm,Namer,ModReader,
 	Tokenizer,Macroer,Disassembler,TypeChecker, Compiler, Transliterator}; //for nodejs
 }

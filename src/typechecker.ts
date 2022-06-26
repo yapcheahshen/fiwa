@@ -15,8 +15,6 @@ export class TypeChecker {
 			const [tk]=tokens[i];
 			const code=codeOfSym(tk);
 			if (!~code) {
-				const [n,const_type]=parseNumber(tk);
-				if (!const_type) continue;
 				out.push([...tokens[i] , depth] );
 				continue;
 			}

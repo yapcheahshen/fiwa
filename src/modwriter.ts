@@ -2,7 +2,7 @@
 //最初由 https://github.com/btzy/wasm-codegen 翻譯過來，原來實作不完整，也比較囉嗦。
 import {CodeWriter} from './codewriter.ts'; //這是最複雜的 Writer，其他Writer集中一處
 import {Writer,FunctionWriter,ImportWriter,TypeWriter,ExportWriter,GlobalWriter,DataWriter} from './writers.ts'
-import {Var,ExternalKind,sectionCode,Inst,bytecodes,bytecode} from './constants.ts'
+import {Var,ExternalKind,SectionCode,Inst,bytecodes,bytecode,WasmHeader} from './constants.ts'
 import {encInt,encUInt,encUIntString,eqFuncTypes,validExportName} from './utils.ts'
 interface IModuleWriter{
 	_types:bytecodes[];
@@ -37,16 +37,16 @@ export class ModuleWriter implements IModuleWriter {
 		const output = [];//只能產生一次
     	this.exportExtra();
 	    this.resolveFunctionNames();
-	    const wasm_header = [0,97,115,109,1,0,0,0]; //.asm....
-	    output.push(...wasm_header);
-	    this.writeSection(output,sectionCode.TYPE,this._types );
-	    this.writeSection(output,sectionCode.IMPORT,this._imports );
-	    this.writeSection(output,sectionCode.FUNCTION,this._functions );
-	    this.writeSection(output,sectionCode.MEMORY,this._memory );
-	    this.writeSection(output,sectionCode.EXPORT,this._exports );
-	    this.writeSection(output,sectionCode.CODE,this._codes );
-	    this.writeSection(output,sectionCode.GLOBAL,this._globals );
-	    this.writeSection(output,sectionCode.DATA,this._datum );
+	    
+	    output.push(...WasmHeader);
+	    this.writeSection(output,SectionCode.TYPE,this._types );
+	    this.writeSection(output,SectionCode.IMPORT,this._imports );
+	    this.writeSection(output,SectionCode.FUNCTION,this._functions );
+	    this.writeSection(output,SectionCode.MEMORY,this._memory );
+	    this.writeSection(output,SectionCode.EXPORT,this._exports );
+	    this.writeSection(output,SectionCode.CODE,this._codes );
+	    this.writeSection(output,SectionCode.GLOBAL,this._globals );
+	    this.writeSection(output,SectionCode.DATA,this._datum );
 	    this.done=true;
 	    return new Uint8Array(output);
 	}
@@ -94,7 +94,7 @@ export class ModuleWriter implements IModuleWriter {
 	    codeWriter.setType(signature);
 	    this._codes.push(codeWriter);
 	}
-	private writeSection(output:bytecode[],sectioncode:sectionCode,section:(Writer|bytecodes)[]  ){
+	private writeSection(output:bytecode[],sectioncode:SectionCode,section:(Writer|bytecodes)[]  ){
 		if (section.length==0) return;
         output.push(sectioncode);
         const sizeloc = output.length;
