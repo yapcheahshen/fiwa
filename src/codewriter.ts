@@ -37,7 +37,9 @@ export class CodeWriter extends Writer implements ICodeWriter{
 	write() {
 		const out=[];
 		out.push(...encUInt(this._localTypes.length));
-		this._localTypes.forEach(type=>out.push(1,type));
+		//按spec, 同一型別的local 可以合併，為了取用方便，按宣告的順序，型別相同也不合併
+		const count=1; 
+		this._localTypes.forEach(type=>out.push(count,type));
 		out.push(...this._code);
 		return [...encUInt(out.length), ...out];
 	}
