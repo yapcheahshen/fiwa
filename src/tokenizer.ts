@@ -1,16 +1,25 @@
 /* Tokenizer is learning new chinese words on the way */
-
+import {isOrdinal} from "./ordinal.ts";
 import {codeOfSym} from './namer.ts'
+import {isEmojiSymbol, isEmoji} from './emojisym.ts';
+
 export enum TokenType {
   blank=0;
   ascii=1;  //might combine
   chinese=2; //might combine
-  separator=3; //only one char allow for a token
+  ordinal=3;
+  emoji=4;
+  separator=10; //only one char allow for a token
 }
 export const tokenType:TokenType=cp=>{
+  if (!cp) return TokenType.blank;
   if (cp<=0x20) return TokenType.blank;
   if (cp<0x100) {
     return TokenType.ascii;
+  } else if (isOrdinal(cp)) {
+    return TokenType.ordinal; 
+  } else if (isEmoji(cp)) { 
+    return TokenType.emoji;
   } else if ((cp>=0x3400&&cp<=0x4db5) ||(cp>=0x4e00&&cp<=0x9fff) || (cp>=0xd800&&cp<=0xdcff )||(cp>=0xe000&&cp<=0xf9ff )) {
     return TokenType.chinese;
   } else return TokenType.separator;
@@ -113,17 +122,56 @@ export class Tokenizer implements TTokenizer{
   token(){
     return this.tib.slice(this.ptib,this.ntib);
   }
+  eatString(){
+    this.ntib++;
+    while (this.ntib<this.tib.length) {
+      const ch=this.tib[this.ntib];
+      if (ch==='\\') {
+        this.ntib++;
+      } else if (ch=='"'){
+        this.ntib++;
+        break;
+      }
+      this.ntib++;
+    }
+  }
   next(noautobreak=false) {//codePointAt 能正確讀一個 UTF32 字元
     // this.skipBlank();
     this.ptib=this.ntib;
     let ntib=this.ntib;
     const tib=this.tib;
-    const ct=tokenType(tib.codePointAt(ntib));
-    while (ntib<tib.length) {
-       	ntib++;
-        const ct2=tokenType(tib.codePointAt(ntib));
-      	if(ct2!=ct || ct2==TokenType.separator ) break; 
+    const cp=tib.codePointAt(ntib);
+    const ct=tokenType(cp);
+    let stopconcat=false;
+    let count=0;
+    if (cp==0x22) {
+       this.eatString();
+       return;
     }
+    while (ntib<tib.length) {
+        if (tib.codePointAt(ntib)>0xffff) ntib++;
+        ntib++;
+        count++;
+        const cp2=tib.codePointAt(ntib)
+        const ct2=tokenType(cp2);
+        // console.log(count,tib.slice(this.ntib,ntib),ct2,cp, ntib-this.ntib)
+        const mayfollow= ct2==TokenType.emoji || ct2==TokenType.ordinal;
+        if (stopconcat) break;
+        if (ct2===ct) {
+          if (mayfollow) break;
+        } else {
+          if (cp2==0x5b && ct!==TokenType.separator && ct!==TokenType.blank) {
+             while (ntib<tib.length && tib.charAt(ntib)!==']') ntib++;
+             continue;
+          }
+          if (mayfollow) { 
+            if (ct===TokenType.chinese) stopconcat=true;
+          }
+          else break;          // console.log('breaking',mayfollow,ct,ct2,stopconcat)
+        }
+    }
+    if (tib.codePointAt(ntib-1)>=0xFFFF) ntib++;
+
     if (!noautobreak) {
       const bestlen=this.breakat( this.ntib, ntib);
       if (bestlen>0) {

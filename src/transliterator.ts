@@ -1,5 +1,6 @@
 /* transpile byte code in and from wasm */
-import {Mnemonic,Instructions,InstAttr,immOfSym,codeOfSym,ordinalOf} from './namer.ts';
+import {Mnemonic} from './constants.ts'
+import {Instructions,InstAttr,immOfSym,codeOfSym,ordinalOf} from './namer.ts';
 import {Tokenizer} from './tokenizer.ts';
 import {parseNumber,encInt,encUInt,decodeInt,decodeUInt} from './utils.ts';
 export class Transliterator {

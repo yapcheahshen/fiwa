@@ -1,5 +1,5 @@
-import {Var,Inst } from './constants.ts';
-import {Mnemonic} from './namer.ts'
+import {Var,Inst,Mnemonic } from './constants.ts';
+
 export const encUInt = (value:number) => { //encode unsigned LEB128
     //if (value < 0 || value !== Math.floor(value)) debugger;
     const output = [];
@@ -46,7 +46,7 @@ export const parseNumber=str=>{
     let n=parseInt(str);
     if (!str) return [0,0];
     if (n.toString(10)==str) {
-
+        
     } else if (str.slice(0,2)=='0x'&&parseInt(str.slice(2)).toString(16)==str.slice(2)) 
         n=parseInt(str.slice(2),16);
     else if (parseFloat(str).toString()==str) n=Math.floor(parseFloat(str));
@@ -86,3 +86,19 @@ export const validExportName=str=> str.match(/^[A-Z_][0-9A-Z_$]*$/i);
 export const validForthName=(n:string)=>!(!n 
     || n.startsWith("_") || n.startsWith("=") || n.startsWith(":") || n.startsWith(";") 
     || n.endsWith(")") || n.endsWith('"'));
+
+export const splitUTF32=(str:string):number[]=>{
+    if (!str) {
+        const empty:number[]=[];
+        return empty
+    }
+    let i=0;
+    const out:number[]=[];
+    while (i<str.length) {
+        const code=str.codePointAt(i)||0;
+        out.push(code);
+        i++;
+        if (code>0xffff) i++;
+    }
+    return out;
+}

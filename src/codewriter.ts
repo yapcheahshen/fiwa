@@ -1,7 +1,7 @@
 /* 編寫 WebAssembly 指令*/
 import {encInt,encUInt} from './utils.ts'
-import {Var,bytecode,splitInstruction} from './constants.ts'
-import {Instructions,Mnemonic} from './namer.ts';
+import {Var,bytecode,splitInstruction,Mnemonic} from './constants.ts'
+import {Instructions} from './namer.ts';
 import {Writer} from './writers.ts'
 //簡單指令
 const simpleInsts=`unreachable,nop,drop,select,else,end,ret,i32_eqz,i32_eq,i32_ne,

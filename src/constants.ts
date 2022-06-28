@@ -9,3 +9,4 @@ export type bytecodes=bytecode[];
 export const START='_start';
 export const splitInstruction=str=>str.split(/[\r\n ]*,[\r\n ]*/).map(it=>it.trim()).filter(it=>it.trim());
 export const WasmHeader = [0,97,115,109,1,0,0,0]; //.asm....
+export const Mnemonic={}; //fill by namers

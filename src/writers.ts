@@ -1,7 +1,6 @@
 /* 各種小writer */
+import {Var,bytecode,ExternalKind,Mnemonic} from './constants.ts'
 import {encUInt,encUIntString} from './utils.ts'
-import {Var,bytecode,ExternalKind} from './constants.ts'
-import {Mnemonic} from './namer.ts'
 export class Writer {
 	write(){}
 }

@@ -1,0 +1,2 @@
+/* inline expansion of expression */
+

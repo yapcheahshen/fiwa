@@ -1,5 +1,4 @@
-import {Mnemonic} from './namer.ts'
-import {ExternalKind} from './constants.ts'
+import {ExternalKind,Mnemonic} from './constants.ts'
 export const readType=(reader:byteReader,sz:number)=>{
 	const numOfType=reader.readUint();
 	const typeInfos=[];
